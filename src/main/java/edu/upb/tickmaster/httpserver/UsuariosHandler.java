@@ -76,7 +76,7 @@ public class UsuariosHandler implements HttpHandler {
                             JsonObject resp = new JsonObject();
                             resp.addProperty("id", id);
                             resp.addProperty("nombre", nombre);
-                            resp.addProperty("apelli do", apellido);
+                            resp.addProperty("apellido", apellido);
                             resp.addProperty("email", email);
                             response = resp.toString();
                             byte[] byteResponse = response.getBytes(StandardCharsets.UTF_8);

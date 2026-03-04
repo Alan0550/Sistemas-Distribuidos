@@ -1,0 +1,17 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.import.maven.enabled": true,
+  "java.project.sourceAsProjectRoot": false,
+  "java.project.referencedLibraries": {
+    "include": [
+      "**/*.jar"
+    ],
+    "exclude": [
+      "**/node_modules/**"
+    ]
+  },
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java",
+    "editor.formatOnSave": true
+  }
+}

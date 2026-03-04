@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "edu.upb.tickmaster.Main",
+      "projectName": "Tickmaster"
+    },
+    {
+      "type": "java",
+      "name": "Debug",
+      "request": "launch",
+      "mainClass": "",
+      "projectName": "",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopOnEntry": false
+    }
+  ]
+}

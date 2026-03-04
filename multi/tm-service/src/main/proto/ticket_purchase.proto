@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_package = "edu.upb.tmservice.grpc";
+option java_multiple_files = true;
+
+package tmservice;
+
+service TicketPurchaseService {
+  rpc comprarTicket (CompraTicketRequest) returns (CompraTicketResponse);
+}
+
+message CompraTicketRequest {
+  int64 id_usuario = 1;
+  int64 id_evento = 2;
+  int64 id_tipo_ticket = 3;
+  int32 cantidad = 4;
+  string idempotency_key = 5;
+}
+
+message CompraTicketResponse {
+  int64 primer_ticket_id = 1;
+  int32 tickets_creados = 2;
+  string status = 3;
+  string mensaje = 4;
+}

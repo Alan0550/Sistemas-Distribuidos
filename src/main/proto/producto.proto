@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+
+option java_package = "edu.upb.tickmaster.grpc";
+option java_multiple_files = true;
+
+package tickmaster;
+
+
+service ProductoService {
+
+  rpc registrarProducto (ProductoRequest) returns (ProductoResponse);
+
+  rpc obtenerProducto (IdRequest) returns (ProductoRequest);
+}
+
+
+enum Categoria {
+  ELECTRONICA = 0;
+  ALIMENTOS = 1;
+  VESTIMENTA = 2;
+  OTROS = 3;
+}
+
+message ProductoRequest {
+  string id = 1; // Los números son las "etiquetas" para el binario
+  string nombre = 2;
+  string descripcion = 3;
+  double precio = 4;
+  int32 stock = 5;
+  Categoria categoria = 6;
+}
+
+message ProductoResponse {
+  string codigo_respuesta = 1;
+  string mensaje = 2;
+  string timestamp = 3;
+}
+
+message IdRequest {
+  string id = 1;
+}
