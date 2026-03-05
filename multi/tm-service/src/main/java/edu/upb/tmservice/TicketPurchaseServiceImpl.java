@@ -27,7 +27,8 @@ public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketP
 
         if (userId <= 0 || eventId <= 0 || tipoTicketId <= 0 || cantidad <= 0 || idempotencyKey.isEmpty()) {
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("id_usuario, id_evento, id_tipo_ticket, cantidad e idempotency_key deben ser validos")
+                    .withDescription(
+                            "id_usuario, id_evento, id_tipo_ticket, cantidad e idempotency_key deben ser validos")
                     .asRuntimeException());
             return;
         }
@@ -85,7 +86,8 @@ public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketP
                 long firstTicketId = 0;
 
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO tickets (id_evento, id_usuario, nro_asiento, precio, idempotency_key, id_tipo_ticket) " +
+                        "INSERT INTO tickets (id_evento, id_usuario, nro_asiento, precio, idempotency_key, id_tipo_ticket) "
+                                +
                                 "VALUES (?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
                     for (int i = 1; i <= cantidad; i++) {
@@ -128,6 +130,7 @@ public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketP
         }
     }
 
+    // verifica que no haya duplicados
     private PurchaseResult findExistingPurchase(Connection conn, String baseKey) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT MIN(id) AS first_ticket_id, COUNT(*) AS total " +
