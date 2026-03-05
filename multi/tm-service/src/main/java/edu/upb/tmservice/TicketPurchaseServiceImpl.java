@@ -1,5 +1,11 @@
 package edu.upb.tmservice;
 
+import edu.upb.tmservice.dao.EventoDao;
+import edu.upb.tmservice.dao.PurchaseLookup;
+import edu.upb.tmservice.dao.TicketDao;
+import edu.upb.tmservice.dao.TipoTicketDao;
+import edu.upb.tmservice.dao.TipoTicketEntity;
+import edu.upb.tmservice.dao.UsuarioDao;
 import edu.upb.tmservice.grpc.CompraTicketRequest;
 import edu.upb.tmservice.grpc.CompraTicketResponse;
 import edu.upb.tmservice.grpc.TicketPurchaseServiceGrpc;
@@ -9,13 +15,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketPurchaseServiceImplBase {
     private static final Logger log = LoggerFactory.getLogger(TicketPurchaseServiceImpl.class);
+    private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final EventoDao eventoDao = new EventoDao();
+    private final TipoTicketDao tipoTicketDao = new TipoTicketDao();
+    private final TicketDao ticketDao = new TicketDao();
 
     @Override
     public void comprarTicket(CompraTicketRequest request, StreamObserver<CompraTicketResponse> responseObserver) {
@@ -64,57 +71,47 @@ public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketP
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
             conn.setAutoCommit(false);
             try {
-                PurchaseResult existing = findExistingPurchase(conn, baseKey);
+                PurchaseLookup existing = ticketDao.findExistingPurchase(conn, baseKey);
                 if (existing != null) {
                     conn.commit();
-                    return existing;
+                    return new PurchaseResult(
+                            existing.getFirstTicketId(),
+                            existing.getTotal(),
+                            "Compra ya procesada previamente");
                 }
 
-                if (!existsById(conn, "usuarios", userId) || !existsById(conn, "eventos", eventId)) {
+                if (!usuarioDao.existsById(conn, userId) || !eventoDao.existsById(conn, eventId)) {
                     throw new IllegalArgumentException("Usuario o evento no existe");
                 }
 
-                TipoTicketData tipoTicket = lockTipoTicket(conn, tipoTicketId, eventId);
+                TipoTicketEntity tipoTicket = tipoTicketDao.lockByIdAndEvent(conn, tipoTicketId, eventId);
                 if (tipoTicket == null) {
                     throw new IllegalArgumentException("Tipo de ticket no valido para el evento");
                 }
-                if (tipoTicket.available < cantidad) {
+                if (tipoTicket.getCantidad() < cantidad) {
                     throw new IllegalArgumentException("No hay suficiente disponibilidad");
                 }
 
-                int soldCount = countSoldTickets(conn, tipoTicketId);
+                int soldCount = tipoTicketDao.countSoldTickets(conn, tipoTicketId);
                 long firstTicketId = 0;
 
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO tickets (id_evento, id_usuario, nro_asiento, precio, idempotency_key, id_tipo_ticket) "
-                                +
-                                "VALUES (?,?,?,?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    for (int i = 1; i <= cantidad; i++) {
-                        String seat = buildSeatNumber(tipoTicket.seatType, soldCount + i);
-                        String requestKey = baseKey + "#" + i;
-                        ps.setLong(1, eventId);
-                        ps.setLong(2, userId);
-                        ps.setString(3, seat);
-                        ps.setBigDecimal(4, tipoTicket.price);
-                        ps.setString(5, requestKey);
-                        ps.setLong(6, tipoTicketId);
-                        ps.executeUpdate();
-
-                        try (ResultSet keys = ps.getGeneratedKeys()) {
-                            if (keys.next() && firstTicketId == 0) {
-                                firstTicketId = keys.getLong(1);
-                            }
-                        }
+                for (int i = 1; i <= cantidad; i++) {
+                    String seat = buildSeatNumber(tipoTicket.getTipoAsiento(), soldCount + i);
+                    String requestKey = baseKey + "#" + i;
+                    long currentTicketId = ticketDao.insertTicket(
+                            conn,
+                            eventId,
+                            userId,
+                            seat,
+                            tipoTicket.getPrecio(),
+                            requestKey,
+                            tipoTicketId);
+                    if (firstTicketId == 0) {
+                        firstTicketId = currentTicketId;
                     }
                 }
 
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE tipo_ticket SET cantidad = cantidad - ? WHERE id = ?")) {
-                    ps.setInt(1, cantidad);
-                    ps.setLong(2, tipoTicketId);
-                    ps.executeUpdate();
-                }
+                tipoTicketDao.decreaseAvailable(conn, tipoTicketId, cantidad);
 
                 conn.commit();
                 return new PurchaseResult(firstTicketId, cantidad, "Compra registrada correctamente");
@@ -130,78 +127,9 @@ public class TicketPurchaseServiceImpl extends TicketPurchaseServiceGrpc.TicketP
         }
     }
 
-    // verifica que no haya duplicados
-    private PurchaseResult findExistingPurchase(Connection conn, String baseKey) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT MIN(id) AS first_ticket_id, COUNT(*) AS total " +
-                        "FROM tickets WHERE idempotency_key LIKE ?")) {
-            ps.setString(1, baseKey + "#%");
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next() && rs.getInt("total") > 0) {
-                    return new PurchaseResult(
-                            rs.getLong("first_ticket_id"),
-                            rs.getInt("total"),
-                            "Compra ya procesada previamente");
-                }
-            }
-        }
-        return null;
-    }
-
-    private boolean existsById(Connection conn, String table, long id) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM " + table + " WHERE id = ? LIMIT 1")) {
-            ps.setLong(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private TipoTicketData lockTipoTicket(Connection conn, long tipoTicketId, long eventId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT tipo_asiento, cantidad, precio FROM tipo_ticket WHERE id = ? AND id_evento = ? FOR UPDATE")) {
-            ps.setLong(1, tipoTicketId);
-            ps.setLong(2, eventId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new TipoTicketData(
-                            rs.getString("tipo_asiento"),
-                            rs.getInt("cantidad"),
-                            rs.getBigDecimal("precio"));
-                }
-            }
-        }
-        return null;
-    }
-
-    private int countSoldTickets(Connection conn, long tipoTicketId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT COUNT(*) FROM tickets WHERE id_tipo_ticket = ?")) {
-            ps.setLong(1, tipoTicketId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        }
-        return 0;
-    }
-
     private String buildSeatNumber(String seatType, int sequence) {
         String prefix = seatType == null || seatType.trim().isEmpty() ? "ASIENTO" : seatType.trim().toUpperCase();
         return prefix + "-" + sequence;
-    }
-
-    private static class TipoTicketData {
-        private final String seatType;
-        private final int available;
-        private final java.math.BigDecimal price;
-
-        private TipoTicketData(String seatType, int available, java.math.BigDecimal price) {
-            this.seatType = seatType;
-            this.available = available;
-            this.price = price;
-        }
     }
 
     private static class PurchaseResult {

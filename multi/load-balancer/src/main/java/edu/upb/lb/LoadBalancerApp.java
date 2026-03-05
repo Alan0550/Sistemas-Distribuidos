@@ -13,10 +13,7 @@ public class LoadBalancerApp {
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(9000), 0);
-        server.createContext("/registrar", new RegisterHandler());
-        server.createContext("/tm", new LoadBalancerHandler());
-        server.createContext("/monitor/health", new MonitorHandler(false, 9000));
-        server.createContext("/monitor/metrics", new MonitorHandler(true, 9000));
+        server.createContext("/", new ProxyHandler());
         server.setExecutor(Executors.newFixedThreadPool(4));
         log.info("Load balancer on http://localhost:9000");
         server.start();

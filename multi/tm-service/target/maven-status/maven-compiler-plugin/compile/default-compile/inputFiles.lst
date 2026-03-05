@@ -1,3 +1,11 @@
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoDao.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoEntity.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\PurchaseLookup.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketDao.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketDao.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketEntity.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioDao.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioEntity.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\DatabaseConnection.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\EventsHandler.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketRequest.java

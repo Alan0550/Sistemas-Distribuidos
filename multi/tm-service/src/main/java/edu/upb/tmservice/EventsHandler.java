@@ -6,6 +6,10 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import edu.upb.tmservice.dao.EventoDao;
+import edu.upb.tmservice.dao.EventoEntity;
+import edu.upb.tmservice.dao.TipoTicketDao;
+import edu.upb.tmservice.dao.TipoTicketEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,16 +17,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class EventsHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(EventsHandler.class);
+    private final EventoDao eventoDao = new EventoDao();
+    private final TipoTicketDao tipoTicketDao = new TipoTicketDao();
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -109,32 +112,17 @@ public class EventsHandler implements HttpHandler {
         JsonArray arr = new JsonArray();
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            String sql = "SELECT id, nombre, fecha, capacidad FROM eventos";
-            boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
-            if (hasKeyword) {
-                sql += " WHERE LOWER(nombre) LIKE ?";
-            }
-            sql += " ORDER BY fecha";
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                if (hasKeyword) {
-                    String like = "%" + keyword.toLowerCase() + "%";
-                    ps.setString(1, like);
-                }
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        long eventId = rs.getLong("id");
-                        JsonObject ev = new JsonObject();
-                        ev.addProperty("id", eventId);
-                        ev.addProperty("nombre", rs.getString("nombre"));
-                        Timestamp fecha = rs.getTimestamp("fecha");
-                        ev.addProperty("fecha", fecha != null ? fecha.toString() : "");
-                        ev.addProperty("capacidad", rs.getInt("capacidad"));
-                        ev.add("tipos_ticket", loadTiposTicket(conn, eventId));
-                        arr.add(ev);
-                    }
-                }
+            List<EventoEntity> events = eventoDao.listEvents(keyword);
+            for (EventoEntity event : events) {
+                long eventId = event.getId();
+                JsonObject ev = new JsonObject();
+                ev.addProperty("id", eventId);
+                ev.addProperty("nombre", event.getNombre());
+                Timestamp fecha = event.getFecha();
+                ev.addProperty("fecha", fecha != null ? fecha.toString() : "");
+                ev.addProperty("capacidad", event.getCapacidad());
+                ev.add("tipos_ticket", loadTiposTicket(conn, eventId));
+                arr.add(ev);
             }
         }
 
@@ -172,20 +160,7 @@ public class EventsHandler implements HttpHandler {
         }
 
         long eventId = 0;
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO eventos (nombre, fecha, capacidad) VALUES (?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, nombre);
-            ps.setTimestamp(2, fechaTs);
-            ps.setInt(3, capacidad);
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) {
-                    eventId = keys.getLong(1);
-                }
-            }
-        }
+        eventId = eventoDao.createEvent(nombre, fechaTs, capacidad);
 
         JsonObject resp = new JsonObject();
         resp.addProperty("status", "OK");
@@ -225,35 +200,22 @@ public class EventsHandler implements HttpHandler {
         int remainingCapacity;
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
             conn.setAutoCommit(false);
-            try {
-                int eventCapacity = loadEventCapacity(conn, eventId);
-                if (eventCapacity <= 0) {
-                    throw new IllegalArgumentException("El evento no existe");
-                }
-
-                int usedCapacity = loadAssignedCapacity(conn, eventId);
-                remainingCapacity = eventCapacity - usedCapacity;
-                if (cantidad > remainingCapacity) {
-                    throw new IllegalArgumentException("Solo quedan " + Math.max(remainingCapacity, 0) + " espacios disponibles");
-                }
-
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO tipo_ticket (id_evento, tipo_asiento, cantidad, precio) VALUES (?,?,?,?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setLong(1, eventId);
-                    ps.setString(2, tipoAsiento);
-                    ps.setInt(3, cantidad);
-                    ps.setBigDecimal(4, precio);
-                    ps.executeUpdate();
-                    try (ResultSet keys = ps.getGeneratedKeys()) {
-                        if (keys.next()) {
-                            ticketTypeId = keys.getLong(1);
-                        }
+                try {
+                    int eventCapacity = eventoDao.loadEventCapacity(conn, eventId);
+                    if (eventCapacity <= 0) {
+                        throw new IllegalArgumentException("El evento no existe");
                     }
-                }
-                conn.commit();
-                remainingCapacity -= cantidad;
-            } catch (IllegalArgumentException e) {
+
+                    int usedCapacity = tipoTicketDao.loadAssignedCapacity(conn, eventId);
+                    remainingCapacity = eventCapacity - usedCapacity;
+                    if (cantidad > remainingCapacity) {
+                        throw new IllegalArgumentException("Solo quedan " + Math.max(remainingCapacity, 0) + " espacios disponibles");
+                    }
+
+                    ticketTypeId = tipoTicketDao.create(conn, eventId, tipoAsiento, cantidad, precio);
+                    conn.commit();
+                    remainingCapacity -= cantidad;
+                } catch (IllegalArgumentException e) {
                 conn.rollback();
                 JsonObject resp = new JsonObject();
                 resp.addProperty("status", "NOK");
@@ -281,47 +243,16 @@ public class EventsHandler implements HttpHandler {
 
     private JsonArray loadTiposTicket(Connection conn, long eventId) throws SQLException {
         JsonArray arr = new JsonArray();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, tipo_asiento, cantidad, precio FROM tipo_ticket WHERE id_evento = ? ORDER BY id")) {
-            ps.setLong(1, eventId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    JsonObject tipo = new JsonObject();
-                    tipo.addProperty("id", rs.getLong("id"));
-                    tipo.addProperty("tipo_asiento", rs.getString("tipo_asiento"));
-                    tipo.addProperty("cantidad", rs.getInt("cantidad"));
-                    tipo.addProperty("precio", rs.getBigDecimal("precio"));
-                    arr.add(tipo);
-                }
-            }
+        List<TipoTicketEntity> types = tipoTicketDao.listByEventId(conn, eventId);
+        for (TipoTicketEntity type : types) {
+            JsonObject tipo = new JsonObject();
+            tipo.addProperty("id", type.getId());
+            tipo.addProperty("tipo_asiento", type.getTipoAsiento());
+            tipo.addProperty("cantidad", type.getCantidad());
+            tipo.addProperty("precio", type.getPrecio());
+            arr.add(tipo);
         }
         return arr;
-    }
-
-    private int loadEventCapacity(Connection conn, long eventId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT capacidad FROM eventos WHERE id = ? LIMIT 1")) {
-            ps.setLong(1, eventId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("capacidad");
-                }
-            }
-        }
-        return 0;
-    }
-
-    private int loadAssignedCapacity(Connection conn, long eventId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT COALESCE(SUM(cantidad), 0) AS total FROM tipo_ticket WHERE id_evento = ?")) {
-            ps.setLong(1, eventId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("total");
-                }
-            }
-        }
-        return 0;
     }
 
     private long extractEventId(String requestPath) {

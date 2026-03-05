@@ -5,17 +5,17 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import edu.upb.tmservice.dao.UsuarioDao;
+import edu.upb.tmservice.dao.UsuarioEntity;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 public class LoginHandler implements HttpHandler {
+    private final UsuarioDao usuarioDao = new UsuarioDao();
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -49,27 +49,21 @@ public class LoginHandler implements HttpHandler {
             }
 
             JsonObject user = null;
-            try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                    PreparedStatement ps = conn.prepareStatement(
-                            "SELECT id, username, nombre, rol, password FROM usuarios WHERE username = ? LIMIT 1")) {
-                ps.setString(1, username);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        long userId = rs.getLong("id");
-                        String storedPassword = rs.getString("password");
-                        boolean validPassword = verifyPassword(password, storedPassword);
+            UsuarioEntity entity = usuarioDao.findAuthByUsername(username);
+            if (entity != null) {
+                long userId = entity.getId();
+                String storedPassword = entity.getPassword();
+                boolean validPassword = verifyPassword(password, storedPassword);
 
-                        if (validPassword) {
-                            if (!isBcryptHash(storedPassword)) {
-                                migratePasswordToHash(conn, userId, password);
-                            }
-                            user = new JsonObject();
-                            user.addProperty("id", userId);
-                            user.addProperty("username", rs.getString("username"));
-                            user.addProperty("nombre", rs.getString("nombre"));
-                            user.addProperty("rol", rs.getString("rol"));
-                        }
+                if (validPassword) {
+                    if (!isBcryptHash(storedPassword)) {
+                        migratePasswordToHash(userId, password);
                     }
+                    user = new JsonObject();
+                    user.addProperty("id", userId);
+                    user.addProperty("username", entity.getUsername());
+                    user.addProperty("nombre", entity.getNombre());
+                    user.addProperty("rol", entity.getRol());
                 }
             }
 
@@ -102,16 +96,15 @@ public class LoginHandler implements HttpHandler {
     }
 
     private boolean isBcryptHash(String value) {
+        if (value == null) {
+            return false;
+        }
         return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
     }
 
-    private void migratePasswordToHash(Connection conn, long userId, String rawPassword) throws Exception {
+    private void migratePasswordToHash(long userId, String rawPassword) throws Exception {
         String hash = BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
-        try (PreparedStatement ps = conn.prepareStatement("UPDATE usuarios SET password = ? WHERE id = ?")) {
-            ps.setString(1, hash);
-            ps.setLong(2, userId);
-            ps.executeUpdate();
-        }
+        usuarioDao.updatePasswordHash(userId, hash);
     }
 
     private void send(HttpExchange he, int statusCode, String bodyText) throws IOException {

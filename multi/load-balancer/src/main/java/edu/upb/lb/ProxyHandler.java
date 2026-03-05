@@ -1,5 +1,6 @@
 package edu.upb.lb;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
@@ -24,14 +25,16 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
-public class LoadBalancerHandler implements HttpHandler {
-    private static final Logger log = LoggerFactory.getLogger(LoadBalancerHandler.class);
+public class ProxyHandler implements HttpHandler {
+    private static final Logger log = LoggerFactory.getLogger(ProxyHandler.class);
     private static final int CONNECT_TIMEOUT_MS = Integer
             .parseInt(System.getenv().getOrDefault("LB_CONNECT_TIMEOUT_MS", "10000"));
     private static final int READ_TIMEOUT_MS = Integer
@@ -39,9 +42,90 @@ public class LoadBalancerHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange he) throws IOException {
+        addBaseHeaders(he.getResponseHeaders());
+        String path = he.getRequestURI().getPath();
+
+        if ("/monitor/health".equals(path)) {
+            handleMonitor(he, false);
+            return;
+        }
+        if ("/monitor/metrics".equals(path)) {
+            handleMonitor(he, true);
+            return;
+        }
+        if ("/registrar".equals(path)) {
+            handleRegister(he);
+            return;
+        }
+        if (path.startsWith("/tm")) {
+            handleProxy(he);
+            return;
+        }
+
+        sendResponse(he, 404, "{\"status\":\"NOK\",\"message\":\"Ruta no encontrada\"}".getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void handleMonitor(HttpExchange he, boolean metricsMode) throws IOException {
+        JsonObject out;
+        if (metricsMode) {
+            out = MonitorStore.getInstance().metrics("load-balancer", 9000);
+        } else {
+            out = MonitorStore.getInstance().health("load-balancer", 9000);
+        }
+        sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void handleRegister(HttpExchange he) throws IOException {
+        String method = he.getRequestMethod();
+        if ("OPTIONS".equals(method)) {
+            sendResponse(he, 200, "{}".getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+
+        if ("GET".equals(method)) {
+            List<String> list = BackendRegistry.getInstance().list();
+            JsonArray arr = new JsonArray();
+            for (String b : list) {
+                arr.add(b);
+            }
+            JsonObject out = new JsonObject();
+            out.add("backends", arr);
+            out.addProperty("count", list.size());
+            sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+
+        if (!"POST".equals(method)) {
+            sendResponse(he, 405, "{\"status\":\"NOK\",\"message\":\"Metodo no soportado\"}".getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+
+        try {
+            JsonObject body = JsonParser.parseReader(
+                    new InputStreamReader(he.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
+            String ip = body.has("ip") ? body.get("ip").getAsString() : "localhost";
+            int port = body.has("port") ? body.get("port").getAsInt() : -1;
+
+            if (port < 1 || port > 65535) {
+                sendResponse(he, 400, "{\"status\":\"NOK\",\"message\":\"Puerto invalido\"}".getBytes(StandardCharsets.UTF_8));
+                return;
+            }
+
+            String backend = BackendRegistry.getInstance().register(ip, port);
+            JsonObject out = new JsonObject();
+            out.addProperty("status", "OK");
+            out.addProperty("backend", backend);
+            out.addProperty("count", BackendRegistry.getInstance().list().size());
+            sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            sendResponse(he, 400, "{\"status\":\"NOK\",\"message\":\"Body invalido\"}".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private void handleProxy(HttpExchange he) throws IOException {
         long start = System.nanoTime();
         boolean error = false;
-        String backend = BackendRegistry.getInstance().nextBackend(); //
+        String backend = BackendRegistry.getInstance().nextBackend();
         String method = he.getRequestMethod();
         String requestPath = he.getRequestURI().toString();
         String path = he.getRequestURI().getPath().replaceFirst("^/tm", "");
@@ -49,10 +133,6 @@ public class LoadBalancerHandler implements HttpHandler {
             path = "/";
         }
         String query = he.getRequestURI().getRawQuery();
-
-        Headers out = he.getResponseHeaders();
-        out.add("Access-Control-Allow-Origin", "*");
-        out.add("Content-Type", "application/json");
 
         if (backend == null) {
             error = true;
@@ -63,9 +143,9 @@ public class LoadBalancerHandler implements HttpHandler {
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn("Finished {} in {} ms (backend=none, error=true)", requestPath, elapsedMs);
             return;
-        } //
-        String target = backend + path + (query != null ? "?" + query : "");
+        }
 
+        String target = backend + path + (query != null ? "?" + query : "");
         byte[] requestBody = readBodyIfNeeded(he, method);
         String requestUsername = "POST".equals(method) ? extractUsername(requestBody) : null;
         log.info("Request {} {} routed to {}", method, requestPath, target);
@@ -153,7 +233,6 @@ public class LoadBalancerHandler implements HttpHandler {
                 req = new HttpGet(target);
         }
 
-        // copy headers (skip hop-by-hop/managed headers)
         in.forEach((k, v) -> {
             String key = k == null ? "" : k.toLowerCase();
             if ("content-length".equals(key) || "host".equals(key)
@@ -236,13 +315,6 @@ public class LoadBalancerHandler implements HttpHandler {
         sendResponse(he, statusCode, msg.getBytes(StandardCharsets.UTF_8));
     }
 
-    private void sendResponse(HttpExchange he, int statusCode, byte[] body) throws IOException {
-        he.sendResponseHeaders(statusCode, body.length);
-        try (OutputStream os = he.getResponseBody()) {
-            os.write(body);
-        }
-    }
-
     private String classifyErrorType(Throwable e) {
         Throwable cause = e;
         while (cause != null) {
@@ -256,6 +328,20 @@ public class LoadBalancerHandler implements HttpHandler {
             cause = cause.getCause();
         }
         return "OTHER";
+    }
+
+    private void addBaseHeaders(Headers headers) {
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Content-Type", "application/json");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        headers.add("Access-Control-Allow-Headers", "Content-Type");
+    }
+
+    private void sendResponse(HttpExchange he, int statusCode, byte[] body) throws IOException {
+        he.sendResponseHeaders(statusCode, body.length);
+        try (OutputStream os = he.getResponseBody()) {
+            os.write(body);
+        }
     }
 
     private static class ForwardResult {

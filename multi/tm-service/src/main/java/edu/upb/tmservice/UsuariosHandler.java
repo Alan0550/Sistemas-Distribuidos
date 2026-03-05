@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import edu.upb.tmservice.dao.UsuarioDao;
+import edu.upb.tmservice.dao.UsuarioEntity;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +17,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
 
 public class UsuariosHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(UsuariosHandler.class);
+    private final UsuarioDao usuarioDao = new UsuarioDao();
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -49,21 +49,8 @@ public class UsuariosHandler implements HttpHandler {
             if ("GET".equals(method)) {
                 String usernameFilter = getQueryParam(he, "username");
                 if (usernameFilter != null && !usernameFilter.isEmpty()) {
-                    JsonObject user = null;
-                    try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                            PreparedStatement ps = conn.prepareStatement(
-                                    "SELECT id, username, nombre, rol FROM usuarios WHERE username = ? LIMIT 1")) {
-                        ps.setString(1, usernameFilter);
-                        try (ResultSet rs = ps.executeQuery()) {
-                            if (rs.next()) {
-                                user = new JsonObject();
-                                user.addProperty("id", rs.getLong("id"));
-                                user.addProperty("username", rs.getString("username"));
-                                user.addProperty("nombre", rs.getString("nombre"));
-                                user.addProperty("rol", rs.getString("rol"));
-                            }
-                        }
-                    }
+                    UsuarioEntity entity = usuarioDao.findPublicByUsername(usernameFilter);
+                    JsonObject user = toJsonUser(entity);
 
                     if (user == null) {
                         error = true;
@@ -85,18 +72,9 @@ public class UsuariosHandler implements HttpHandler {
                 }
 
                 JsonArray arr = new JsonArray();
-                try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                        PreparedStatement ps = conn
-                                .prepareStatement("SELECT id, username, nombre, rol FROM usuarios ORDER BY id");
-                        ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        JsonObject user = new JsonObject();
-                        user.addProperty("id", rs.getLong("id"));
-                        user.addProperty("username", rs.getString("username"));
-                        user.addProperty("nombre", rs.getString("nombre"));
-                        user.addProperty("rol", rs.getString("rol"));
-                        arr.add(user);
-                    }
+                List<UsuarioEntity> users = usuarioDao.listPublicUsers();
+                for (UsuarioEntity entity : users) {
+                    arr.add(toJsonUser(entity));
                 }
                 byte[] out = arr.toString().getBytes(StandardCharsets.UTF_8);
                 he.sendResponseHeaders(200, out.length);
@@ -126,23 +104,8 @@ public class UsuariosHandler implements HttpHandler {
                 }
 
                 try {
-                    long id = 0;
                     String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt(12));
-                    try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                            PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO usuarios (username, nombre, password, rol) VALUES (?,?,?,?)",
-                                    Statement.RETURN_GENERATED_KEYS)) {
-                        ps.setString(1, username);
-                        ps.setString(2, nombre);
-                        ps.setString(3, passwordHash);
-                        ps.setString(4, rol);
-                        ps.executeUpdate();
-                        try (ResultSet keys = ps.getGeneratedKeys()) {
-                            if (keys.next()) {
-                                id = keys.getLong(1);
-                            }
-                        }
-                    }
+                    long id = usuarioDao.createUser(username, nombre, passwordHash, rol);
                     JsonObject resp = new JsonObject();
                     resp.addProperty("id", id);
                     resp.addProperty("username", username);
@@ -193,6 +156,18 @@ public class UsuariosHandler implements HttpHandler {
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info("Finished {} {} in {} ms (error={})", method, path, elapsedMs, error);
         }
+    }
+
+    private JsonObject toJsonUser(UsuarioEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        JsonObject user = new JsonObject();
+        user.addProperty("id", entity.getId());
+        user.addProperty("username", entity.getUsername());
+        user.addProperty("nombre", entity.getNombre());
+        user.addProperty("rol", entity.getRol());
+        return user;
     }
 
     private String getQueryParam(HttpExchange he, String key) {
