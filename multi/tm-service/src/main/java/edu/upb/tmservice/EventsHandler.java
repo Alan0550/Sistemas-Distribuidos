@@ -51,16 +51,29 @@ public class EventsHandler implements HttpHandler {
 
         try {
             String requestPath = he.getRequestURI().getPath();
+            AuthSessionStore.SessionData session = requireSession(he);
+            if (session == null) {
+                return;
+            }
+
             if ("GET".equals(method)) {
                 handleGet(he);
                 return;
             }
             if ("POST".equals(method)) {
                 if ("/events".equals(requestPath)) {
+                    if (!isAdmin(session)) {
+                        sendForbidden(he);
+                        return;
+                    }
                     handleCreateEvent(he);
                     return;
                 }
                 if (requestPath.matches("^/events/\\d+/ticket-types$")) {
+                    if (!isAdmin(session)) {
+                        sendForbidden(he);
+                        return;
+                    }
                     handleCreateTicketType(he, requestPath);
                     return;
                 }
@@ -273,5 +286,38 @@ public class EventsHandler implements HttpHandler {
         try (OutputStream os = he.getResponseBody()) {
             os.write(out);
         }
+    }
+
+    private AuthSessionStore.SessionData requireSession(HttpExchange he) throws IOException {
+        String authHeader = he.getRequestHeaders().getFirst("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            JsonObject resp = new JsonObject();
+            resp.addProperty("status", "NOK");
+            resp.addProperty("message", "No autorizado");
+            sendJson(he, 401, resp);
+            return null;
+        }
+
+        String token = authHeader.substring("Bearer ".length()).trim();
+        AuthSessionStore.SessionData session = AuthSessionStore.getInstance().getSession(token);
+        if (session == null) {
+            JsonObject resp = new JsonObject();
+            resp.addProperty("status", "NOK");
+            resp.addProperty("message", "Sesion invalida o expirada");
+            sendJson(he, 401, resp);
+            return null;
+        }
+        return session;
+    }
+
+    private boolean isAdmin(AuthSessionStore.SessionData session) {
+        return session != null && "ADMIN".equalsIgnoreCase(session.getRol());
+    }
+
+    private void sendForbidden(HttpExchange he) throws IOException {
+        JsonObject resp = new JsonObject();
+        resp.addProperty("status", "NOK");
+        resp.addProperty("message", "Acceso denegado para este rol");
+        sendJson(he, 403, resp);
     }
 }

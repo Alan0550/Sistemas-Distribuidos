@@ -1,6 +1,7 @@
 package edu.upb.desktop.controller;
 
 import edu.upb.desktop.app.DesktopApp;
+import edu.upb.desktop.model.LoginResultModel;
 import edu.upb.desktop.model.UserModel;
 import edu.upb.desktop.service.AuthService;
 import edu.upb.desktop.util.AlertUtil;
@@ -20,16 +21,28 @@ public class LoginController {
 
     @FXML
     private void onLogin() {
+        LoginResultModel result;
         try {
-            UserModel user = authService.login(
+            result = authService.login(
                     usernameField.getText().trim(),
                     passwordField.getText());
-            SessionManager.setCurrentUser(user);
-            DesktopApp.getInstance().showEvents();
         } catch (IllegalArgumentException e) {
             AlertUtil.error("Login", e.getMessage());
+            return;
         } catch (Exception e) {
-            AlertUtil.error("Login", "No se pudo iniciar sesion");
+            e.printStackTrace();
+            AlertUtil.error("Login", "No se pudo iniciar sesion: " + safeMessage(e));
+            return;
+        }
+
+        try {
+            UserModel user = result.getUser();
+            SessionManager.setCurrentUser(user);
+            SessionManager.setAuthToken(result.getToken());
+            DesktopApp.getInstance().showEvents();
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertUtil.error("UI", "Login OK, pero no se pudo abrir la pantalla: " + safeMessage(e));
         }
     }
 
@@ -40,5 +53,9 @@ public class LoginController {
         } catch (Exception e) {
             AlertUtil.error("Registro", "No se pudo abrir la pantalla de registro");
         }
+    }
+
+    private String safeMessage(Exception e) {
+        return e.getMessage() == null ? "sin detalle" : e.getMessage();
     }
 }

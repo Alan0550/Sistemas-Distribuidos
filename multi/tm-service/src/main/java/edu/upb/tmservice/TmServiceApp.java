@@ -23,6 +23,9 @@ public class TmServiceApp {
         server.createContext("/auth/login", new LoginHandler());
         server.createContext("/events", new EventsHandler());
         server.createContext("/usuarios", new UsuariosHandler());
+        server.createContext("/tickets", new TicketsHandler());
+        server.createContext("/health", new MonitorHandler(false, port));
+        server.createContext("/metrics", new MonitorHandler(true, port));
         server.createContext("/monitor/health", new MonitorHandler(false, port));
         server.createContext("/monitor/metrics", new MonitorHandler(true, port));
         server.setExecutor(Executors.newFixedThreadPool(4));
@@ -35,7 +38,8 @@ public class TmServiceApp {
     }//
 
     private static void registerInLoadBalancer(int port) {
-        String registerUrl = System.getenv().getOrDefault("LB_REGISTER_URL", "http://localhost:9000/registrar");
+        String registerUrl = System.getenv().getOrDefault("LB_REGISTER_URL", "http://localhost:1915/register");
+        String scheme = System.getenv().getOrDefault("TM_SERVICE_SCHEME", "http");
         String host = System.getenv().getOrDefault("TM_SERVICE_HOST", "localhost");
 
         try {
@@ -47,6 +51,7 @@ public class TmServiceApp {
             conn.setRequestProperty("Content-Type", "application/json");
 
             JsonObject body = new JsonObject();
+            body.addProperty("url", scheme + "://" + host + ":" + port + "/");
             body.addProperty("ip", host);
             body.addProperty("port", port);
             byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);

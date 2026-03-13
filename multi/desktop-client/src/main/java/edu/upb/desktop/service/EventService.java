@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import edu.upb.desktop.model.EventModel;
 import edu.upb.desktop.model.TicketTypeModel;
+import edu.upb.desktop.util.SessionManager;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -18,13 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EventService {
-    private final String baseUrl = System.getenv().getOrDefault("LB_UI_BASE_URL", "http://localhost:9000/tm");
+    private final String baseUrl = System.getenv().getOrDefault("LB_UI_BASE_URL", "http://localhost:1915/tm");
 
     public List<EventModel> fetchEvents() throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/events").openConnection();
         conn.setRequestMethod("GET");
         conn.setConnectTimeout(4000);
         conn.setReadTimeout(4000);
+        applyAuthHeader(conn);
 
         if (conn.getResponseCode() != 200) {
             throw new IllegalStateException("No se pudo cargar eventos");
@@ -113,7 +115,15 @@ public class EventService {
         conn.setReadTimeout(4000);
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
+        applyAuthHeader(conn);
         return conn;
+    }
+
+    private void applyAuthHeader(HttpURLConnection conn) {
+        String token = SessionManager.getAuthToken();
+        if (token != null && !token.trim().isEmpty()) {
+            conn.setRequestProperty("Authorization", "Bearer " + token.trim());
+        }
     }
 
     private void writeBody(HttpURLConnection conn, String body) throws Exception {

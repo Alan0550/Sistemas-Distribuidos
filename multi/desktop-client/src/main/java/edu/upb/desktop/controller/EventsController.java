@@ -1,11 +1,13 @@
 package edu.upb.desktop.controller;
 
+import com.google.gson.JsonObject;
 import edu.upb.desktop.app.DesktopApp;
 import edu.upb.desktop.model.EventModel;
 import edu.upb.desktop.model.PurchaseResultModel;
 import edu.upb.desktop.model.TicketTypeModel;
 import edu.upb.desktop.model.UserModel;
 import edu.upb.desktop.service.EventService;
+import edu.upb.desktop.service.MonitorService;
 import edu.upb.desktop.service.TicketGrpcClient;
 import edu.upb.desktop.util.AlertUtil;
 import edu.upb.desktop.util.SessionManager;
@@ -22,6 +24,8 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -84,7 +88,26 @@ public class EventsController {
     @FXML
     private TextField ticketTypePriceField;
 
+    @FXML
+    private HBox adminPanel;
+
+    @FXML
+    private VBox purchasePanel;
+
+    @FXML
+    private Label monitorStatusLabel;
+
+    @FXML
+    private Label monitorBackendsLabel;
+
+    @FXML
+    private Label monitorErrorsLabel;
+
+    @FXML
+    private Label monitorLastUpdateLabel;
+
     private final EventService eventService = new EventService();
+    private final MonitorService monitorService = new MonitorService();
     private final TicketGrpcClient ticketGrpcClient = new TicketGrpcClient();
 
     @FXML
@@ -127,6 +150,16 @@ public class EventsController {
             welcomeLabel.setText("Bienvenido, " + user.getNombre() + " (" + user.getRol() + ")");
         }
 
+        boolean isAdmin = user != null && "ADMIN".equalsIgnoreCase(user.getRol());
+        adminPanel.setVisible(isAdmin);
+        adminPanel.setManaged(isAdmin);
+        purchasePanel.setVisible(!isAdmin);
+        purchasePanel.setManaged(!isAdmin);
+
+        if (isAdmin) {
+            refreshMonitorPanel();
+        }
+
         try {
             List<EventModel> events = eventService.fetchEvents();
             eventsTable.setItems(FXCollections.observableArrayList(events));
@@ -144,6 +177,10 @@ public class EventsController {
 
     @FXML
     private void onCreateEvent() {
+        if (!isAdmin()) {
+            AlertUtil.error("Permisos", "Solo ADMIN puede crear eventos");
+            return;
+        }
         try {
             String nombre = eventNameField.getText().trim();
             int capacidad = eventCapacitySpinner.getValue();
@@ -171,6 +208,10 @@ public class EventsController {
 
     @FXML
     private void onAddTicketType() {
+        if (!isAdmin()) {
+            AlertUtil.error("Permisos", "Solo ADMIN puede agregar tipos de ticket");
+            return;
+        }
         EventModel event = eventsTable.getSelectionModel().getSelectedItem();
         if (event == null) {
             AlertUtil.error("Tipo de ticket", "Primero crea o selecciona un evento");
@@ -231,6 +272,10 @@ public class EventsController {
             AlertUtil.error("Compra", "Selecciona un evento y un tipo de ticket");
             return;
         }
+        if (!isCliente(user)) {
+            AlertUtil.error("Compra", "Solo CLIENTE puede comprar tickets");
+            return;
+        }
 
         int quantity = quantitySpinner.getValue();
         if (quantity <= 0 || quantity > type.getCantidad()) {
@@ -265,6 +310,11 @@ public class EventsController {
         } catch (Exception e) {
             AlertUtil.error("Sesion", "No se pudo cerrar sesion");
         }
+    }
+
+    @FXML
+    private void onRefreshMonitor() {
+        refreshMonitorPanel();
     }
 
     private void updateQuantityLimit(TicketTypeModel selected) {
@@ -314,5 +364,37 @@ public class EventsController {
                 break;
             }
         }
+    }
+
+    private void refreshMonitorPanel() {
+        try {
+            JsonObject health = monitorService.fetchHealth();
+            JsonObject metrics = monitorService.fetchMetrics();
+
+            String status = health.has("status") ? health.get("status").getAsString() : "UNKNOWN";
+            int inService = health.has("in_service_backends") ? health.get("in_service_backends").getAsInt() : 0;
+            int total = health.has("registered_backends") ? health.get("registered_backends").getAsInt() : 0;
+            long errors = metrics.has("errors_total") ? metrics.get("errors_total").getAsLong() : 0L;
+            long requests = metrics.has("requests_total") ? metrics.get("requests_total").getAsLong() : 0L;
+
+            monitorStatusLabel.setText("Estado sistema: " + status);
+            monitorBackendsLabel.setText("Backends activos: " + inService + " / " + total);
+            monitorErrorsLabel.setText("Errores: " + errors + " de " + requests + " requests");
+            monitorLastUpdateLabel.setText("Ultima actualizacion: " + java.time.LocalTime.now().withNano(0));
+        } catch (Exception e) {
+            monitorStatusLabel.setText("Estado sistema: DOWN");
+            monitorBackendsLabel.setText("Backends activos: 0 / 0");
+            monitorErrorsLabel.setText("Errores: no disponible");
+            monitorLastUpdateLabel.setText("Ultima actualizacion: " + java.time.LocalTime.now().withNano(0));
+        }
+    }
+
+    private boolean isAdmin() {
+        UserModel user = SessionManager.getCurrentUser();
+        return user != null && "ADMIN".equalsIgnoreCase(user.getRol());
+    }
+
+    private boolean isCliente(UserModel user) {
+        return user != null && "CLIENTE".equalsIgnoreCase(user.getRol());
     }
 }

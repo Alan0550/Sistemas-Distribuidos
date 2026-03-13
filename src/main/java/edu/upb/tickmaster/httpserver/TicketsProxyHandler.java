@@ -12,8 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-public class EventosProxyHandler implements HttpHandler {
-
+public class TicketsProxyHandler implements HttpHandler {
     private static final String LB_BASE_URL = System.getenv().getOrDefault("LB_BASE_URL", "http://localhost:1915");
 
     @Override
@@ -21,8 +20,11 @@ public class EventosProxyHandler implements HttpHandler {
         Headers responseHeaders = he.getResponseHeaders();
         responseHeaders.add("Access-Control-Allow-Origin", "*");
         responseHeaders.add("Content-Type", "application/json");
+        responseHeaders.add("Access-Control-Allow-Methods", "POST, OPTIONS");
+        responseHeaders.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-        if ("OPTIONS".equals(he.getRequestMethod())) {
+        String method = he.getRequestMethod();
+        if ("OPTIONS".equals(method)) {
             byte[] body = "{}".getBytes(StandardCharsets.UTF_8);
             he.sendResponseHeaders(200, body.length);
             try (OutputStream os = he.getResponseBody()) {
@@ -31,7 +33,7 @@ public class EventosProxyHandler implements HttpHandler {
             return;
         }
 
-        if (!"GET".equals(he.getRequestMethod())) {
+        if (!"POST".equals(method)) {
             byte[] body = "{\"status\":\"NOK\",\"message\":\"Metodo no soportado\"}".getBytes(StandardCharsets.UTF_8);
             he.sendResponseHeaders(405, body.length);
             try (OutputStream os = he.getResponseBody()) {
@@ -41,13 +43,25 @@ public class EventosProxyHandler implements HttpHandler {
         }
 
         String query = he.getRequestURI().getRawQuery();
-        String target = LB_BASE_URL + "/tm/events" + (query != null ? "?" + query : "");
+        String target = LB_BASE_URL + "/tickets" + (query != null ? "?" + query : "");
+        byte[] requestBody = readBytes(he.getRequestBody());
 
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(target).openConnection();
-            conn.setRequestMethod("GET");
+            conn.setRequestMethod("POST");
             conn.setConnectTimeout(1500);
-            conn.setReadTimeout(3000);
+            conn.setReadTimeout(5000);
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/json");
+
+            String authorization = he.getRequestHeaders().getFirst("Authorization");
+            if (authorization != null && !authorization.trim().isEmpty()) {
+                conn.setRequestProperty("Authorization", authorization);
+            }
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(requestBody);
+            }
 
             int statusCode = conn.getResponseCode();
             InputStream stream = statusCode >= 400 ? conn.getErrorStream() : conn.getInputStream();

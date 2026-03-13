@@ -1,3 +1,4 @@
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\AuthSessionStore.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoDao.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoEntity.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\PurchaseLookup.java
@@ -18,6 +19,8 @@ C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tms
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorHandler.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorStore.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketGrpcServer.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseService.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseServiceImpl.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketsHandler.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TmServiceApp.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\UsuariosHandler.java

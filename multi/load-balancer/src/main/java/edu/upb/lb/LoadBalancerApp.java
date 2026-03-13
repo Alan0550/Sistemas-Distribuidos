@@ -10,12 +10,16 @@ import java.util.concurrent.Executors;
 
 public class LoadBalancerApp {
     private static final Logger log = LoggerFactory.getLogger(LoadBalancerApp.class);
+    private static final int LB_PORT = Integer.parseInt(System.getenv().getOrDefault("LB_PORT", "1915"));
 
     public static void main(String[] args) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(9000), 0);
+        Esclavo worker = new Esclavo(BackendRegistry.getInstance());
+        HttpServer server = HttpServer.create(new InetSocketAddress(LB_PORT), 0);
         server.createContext("/", new ProxyHandler());
         server.setExecutor(Executors.newFixedThreadPool(4));
-        log.info("Load balancer on http://localhost:9000");
+        log.info("Load balancer on http://localhost:{}", LB_PORT);
         server.start();
+        worker.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(worker::shutdown));
     }
 }

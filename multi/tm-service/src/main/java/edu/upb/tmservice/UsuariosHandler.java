@@ -91,9 +91,9 @@ public class UsuariosHandler implements HttpHandler {
                 String username = body.has("username") ? body.get("username").getAsString().trim() : "";
                 String nombre = body.has("nombre") ? body.get("nombre").getAsString() : "";
                 String password = body.has("password") ? body.get("password").getAsString() : "";
-                String rol = body.has("rol") ? body.get("rol").getAsString() : "";
+                String rol = "CLIENTE";
 
-                if (username.isEmpty() || nombre.isEmpty() || password.isEmpty() || rol.isEmpty()) {
+                if (username.isEmpty() || nombre.isEmpty() || password.isEmpty()) {
                     error = true;
                     byte[] out = "{\"status\":\"NOK\",\"message\":\"Faltan datos\"}".getBytes(StandardCharsets.UTF_8);
                     he.sendResponseHeaders(400, out.length);

@@ -4,9 +4,12 @@ edu\upb\desktop\controller\EventsController.class
 edu\upb\desktop\controller\LoginController.class
 edu\upb\desktop\service\EventService.class
 edu\upb\desktop\model\EventModel.class
+edu\upb\desktop\service\MonitorService.class
 edu\upb\desktop\controller\RegisterController.class
 edu\upb\desktop\MainUI.class
 edu\upb\desktop\model\PurchaseResultModel.class
+edu\upb\desktop\model\LoginResultModel.class
+edu\upb\desktop\tools\BankWebhookClient.class
 edu\upb\desktop\app\DesktopApp.class
 edu\upb\desktop\model\TicketTypeModel.class
 edu\upb\desktop\util\AlertUtil.class

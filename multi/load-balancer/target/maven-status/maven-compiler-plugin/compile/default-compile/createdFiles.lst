@@ -1,6 +1,9 @@
+edu\upb\lb\Esclavo.class
 edu\upb\lb\LoadBalancerApp.class
 edu\upb\lb\MonitorStore.class
+edu\upb\lb\BackendRegistry$BackendState.class
 edu\upb\lb\ProxyHandler$ForwardResult.class
+edu\upb\lb\BackendRegistry$1.class
 edu\upb\lb\ProxyHandler$1.class
 edu\upb\lb\BackendRegistry.class
 edu\upb\lb\ProxyHandler.class

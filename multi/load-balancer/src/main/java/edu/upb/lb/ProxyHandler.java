@@ -35,6 +35,7 @@ import java.util.List;
 
 public class ProxyHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ProxyHandler.class);
+    private static final int LB_PORT = Integer.parseInt(System.getenv().getOrDefault("LB_PORT", "1915"));
     private static final int CONNECT_TIMEOUT_MS = Integer
             .parseInt(System.getenv().getOrDefault("LB_CONNECT_TIMEOUT_MS", "10000"));
     private static final int READ_TIMEOUT_MS = Integer
@@ -53,25 +54,33 @@ public class ProxyHandler implements HttpHandler {
             handleMonitor(he, true);
             return;
         }
-        if ("/registrar".equals(path)) {
+        if ("/register".equals(path)) {
             handleRegister(he);
             return;
         }
+        if ("/tickets".equals(path)) {
+            handleProxy(he, false);
+            return;
+        }
         if (path.startsWith("/tm")) {
-            handleProxy(he);
+            handleProxy(he, true);
             return;
         }
 
-        sendResponse(he, 404, "{\"status\":\"NOK\",\"message\":\"Ruta no encontrada\"}".getBytes(StandardCharsets.UTF_8));
+        sendResponse(he, 404,
+                "{\"status\":\"NOK\",\"message\":\"Ruta no encontrada\"}".getBytes(StandardCharsets.UTF_8));
     }
 
     private void handleMonitor(HttpExchange he, boolean metricsMode) throws IOException {
         JsonObject out;
         if (metricsMode) {
-            out = MonitorStore.getInstance().metrics("load-balancer", 9000);
+            out = MonitorStore.getInstance().metrics("load-balancer", LB_PORT);
         } else {
-            out = MonitorStore.getInstance().health("load-balancer", 9000);
+            out = MonitorStore.getInstance().health("load-balancer", LB_PORT);
         }
+        out.addProperty("registered_backends", BackendRegistry.getInstance().list().size());
+        out.addProperty("in_service_backends", BackendRegistry.getInstance().countInService());
+        out.add("backend_status", BackendRegistry.getInstance().statusSnapshot());
         sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
     }
 
@@ -91,55 +100,72 @@ public class ProxyHandler implements HttpHandler {
             JsonObject out = new JsonObject();
             out.add("backends", arr);
             out.addProperty("count", list.size());
+            out.addProperty("in_service_count", BackendRegistry.getInstance().countInService());
+            out.add("backend_status", BackendRegistry.getInstance().statusSnapshot());
             sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
             return;
         }
 
         if (!"POST".equals(method)) {
-            sendResponse(he, 405, "{\"status\":\"NOK\",\"message\":\"Metodo no soportado\"}".getBytes(StandardCharsets.UTF_8));
+            sendResponse(he, 405,
+                    "{\"status\":\"NOK\",\"message\":\"Metodo no soportado\"}".getBytes(StandardCharsets.UTF_8));
             return;
         }
 
         try {
             JsonObject body = JsonParser.parseReader(
                     new InputStreamReader(he.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
-            String ip = body.has("ip") ? body.get("ip").getAsString() : "localhost";
-            int port = body.has("port") ? body.get("port").getAsInt() : -1;
-
-            if (port < 1 || port > 65535) {
-                sendResponse(he, 400, "{\"status\":\"NOK\",\"message\":\"Puerto invalido\"}".getBytes(StandardCharsets.UTF_8));
-                return;
+            String backend;
+            if (body.has("url")) {
+                String rawUrl = body.get("url").getAsString();
+                backend = BackendRegistry.getInstance().registerUrl(rawUrl);
+            } else {
+                String ip = body.has("ip") ? body.get("ip").getAsString() : "localhost";
+                int port = body.has("port") ? body.get("port").getAsInt() : -1;
+                if (port < 1 || port > 65535) {
+                    sendResponse(he, 400,
+                            "{\"status\":\"NOK\",\"message\":\"Puerto invalido\"}".getBytes(StandardCharsets.UTF_8));
+                    return;
+                }
+                backend = BackendRegistry.getInstance().register(ip, port);
             }
 
-            String backend = BackendRegistry.getInstance().register(ip, port);
             JsonObject out = new JsonObject();
             out.addProperty("status", "OK");
             out.addProperty("backend", backend);
             out.addProperty("count", BackendRegistry.getInstance().list().size());
+            out.addProperty("in_service_count", BackendRegistry.getInstance().countInService());
             sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException e) {
+            sendResponse(he, 400, "{\"status\":\"NOK\",\"message\":\"URL invalida\"}".getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            sendResponse(he, 400, "{\"status\":\"NOK\",\"message\":\"Body invalido\"}".getBytes(StandardCharsets.UTF_8));
+            sendResponse(he, 400,
+                    "{\"status\":\"NOK\",\"message\":\"Body invalido\"}".getBytes(StandardCharsets.UTF_8));
         }
     }
 
-    private void handleProxy(HttpExchange he) throws IOException {
+    private void handleProxy(HttpExchange he, boolean stripTmPrefix) throws IOException {
         long start = System.nanoTime();
         boolean error = false;
         String backend = BackendRegistry.getInstance().nextBackend();
         String method = he.getRequestMethod();
         String requestPath = he.getRequestURI().toString();
-        String path = he.getRequestURI().getPath().replaceFirst("^/tm", "");
+        String path = he.getRequestURI().getPath();
+        if (stripTmPrefix) {
+            path = path.replaceFirst("^/tm", "");
+        }
         if (path.isEmpty()) {
             path = "/";
         }
         String query = he.getRequestURI().getRawQuery();
+        String monitorRoute = stripTmPrefix ? "/tm" : path;
 
         if (backend == null) {
             error = true;
-            byte[] b = "{\"status\":\"NOK\",\"message\":\"No hay backends registrados\"}"
+            byte[] b = "{\"status\":\"NOK\",\"message\":\"No hay backends en servicio\"}"
                     .getBytes(StandardCharsets.UTF_8);
             sendResponse(he, 503, b);
-            MonitorStore.getInstance().record("/tm", "none", start, true);
+            MonitorStore.getInstance().record(monitorRoute, "none", start, true);
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn("Finished {} in {} ms (backend=none, error=true)", requestPath, elapsedMs);
             return;
@@ -206,7 +232,7 @@ public class ProxyHandler implements HttpHandler {
                 sendProxyError(he, firstErrorType, firstError, requestPath, backend, start);
             }
         } finally {
-            MonitorStore.getInstance().record("/tm", backend, start, error);
+            MonitorStore.getInstance().record(monitorRoute, backend, start, error);
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info("Finished {} in {} ms (backend={}, error={})", requestPath, elapsedMs, backend, error);
         }
@@ -334,7 +360,7 @@ public class ProxyHandler implements HttpHandler {
         headers.add("Access-Control-Allow-Origin", "*");
         headers.add("Content-Type", "application/json");
         headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        headers.add("Access-Control-Allow-Headers", "Content-Type");
+        headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
 
     private void sendResponse(HttpExchange he, int statusCode, byte[] body) throws IOException {

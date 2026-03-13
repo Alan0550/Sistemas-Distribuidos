@@ -26,7 +26,7 @@
         <Button text="Cerrar sesión" onAction="#onLogout" styleClass="secondary-button"/>
     </HBox>
 
-    <HBox spacing="16">
+    <HBox spacing="16" fx:id="adminPanel">
         <VBox spacing="10" styleClass="card-panel">
             <Label text="Paso 1: Crear evento" styleClass="subtitle-label"/>
             <TextField fx:id="eventNameField" promptText="Nombre del evento"/>
@@ -50,6 +50,15 @@
             <TextField fx:id="ticketTypePriceField" promptText="Precio"/>
             <Button text="Agregar tipo de ticket" onAction="#onAddTicketType" styleClass="primary-button"/>
         </VBox>
+
+        <VBox spacing="10" styleClass="card-panel">
+            <Label text="Monitoreo" styleClass="subtitle-label"/>
+            <Label fx:id="monitorStatusLabel" text="Estado sistema: -"/>
+            <Label fx:id="monitorBackendsLabel" text="Backends activos: -"/>
+            <Label fx:id="monitorErrorsLabel" text="Errores: -"/>
+            <Label fx:id="monitorLastUpdateLabel" text="Ultima actualizacion: -"/>
+            <Button text="Actualizar monitoreo" onAction="#onRefreshMonitor" styleClass="secondary-button"/>
+        </VBox>
     </HBox>
 
     <TableView fx:id="eventsTable" prefHeight="360" VBox.vgrow="ALWAYS">
@@ -61,7 +70,7 @@
         </columns>
     </TableView>
 
-    <VBox spacing="10" styleClass="card-panel">
+    <VBox spacing="10" styleClass="card-panel" fx:id="purchasePanel">
         <Label text="Comprar tickets" styleClass="subtitle-label"/>
         <ComboBox fx:id="ticketTypeCombo" promptText="Selecciona tipo de ticket"/>
         <Spinner fx:id="quantitySpinner"/>

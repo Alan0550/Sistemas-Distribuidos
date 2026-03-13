@@ -59,11 +59,16 @@ public class LoginHandler implements HttpHandler {
                     if (!isBcryptHash(storedPassword)) {
                         migratePasswordToHash(userId, password);
                     }
+                    String token = AuthSessionStore.getInstance().createSession(
+                            userId,
+                            entity.getUsername(),
+                            entity.getRol());
                     user = new JsonObject();
                     user.addProperty("id", userId);
                     user.addProperty("username", entity.getUsername());
                     user.addProperty("nombre", entity.getNombre());
                     user.addProperty("rol", entity.getRol());
+                    user.addProperty("token", token);
                 }
             }
 

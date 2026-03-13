@@ -34,6 +34,7 @@ edu\upb\tickmaster\grpc\ProductoServiceGrpc$3.class
 edu\upb\tickmaster\grpc\Categoria$1.class
 edu\upb\tickmaster\grpc\IdRequestOrBuilder.class
 edu\upb\tickmaster\httpserver\UsuariosProxyHandler.class
+edu\upb\tickmaster\httpserver\TicketsProxyHandler.class
 edu\upb\tickmaster\grpc\ProductoServiceGrpc.class
 edu\upb\tickmaster\grpc\ProductoServiceGrpc$ProductoServiceStub.class
 edu\upb\tickmaster\grpc\IdRequest.class

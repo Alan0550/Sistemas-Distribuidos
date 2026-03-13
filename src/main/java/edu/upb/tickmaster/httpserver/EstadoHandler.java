@@ -14,7 +14,7 @@ import java.sql.Connection;
 
 public class EstadoHandler implements HttpHandler {
 
-    private static final String LB_BASE_URL = System.getenv().getOrDefault("LB_BASE_URL", "http://localhost:9000");
+    private static final String LB_BASE_URL = System.getenv().getOrDefault("LB_BASE_URL", "http://localhost:1915");
 
     @Override
     public void handle(HttpExchange he) throws IOException {

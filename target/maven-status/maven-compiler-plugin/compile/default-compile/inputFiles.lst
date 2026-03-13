@@ -17,6 +17,7 @@ C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserve
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\Method.java
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\RootHandler.java
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\Status.java
+C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\TicketsProxyHandler.java
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\UsuariosHandler.java
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\httpserver\UsuariosProxyHandler.java
 C:\Program Files\ticket_master-master\src\main\java\edu\upb\tickmaster\Main.java

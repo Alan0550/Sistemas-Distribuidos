@@ -4,11 +4,14 @@ C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\RegisterController.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\MainUI.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\EventModel.java
+C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\LoginResultModel.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\PurchaseResultModel.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\TicketTypeModel.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\UserModel.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\AuthService.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\EventService.java
+C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\MonitorService.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\TicketGrpcClient.java
+C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\tools\BankWebhookClient.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\AlertUtil.java
 C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\SessionManager.java

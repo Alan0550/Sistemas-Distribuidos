@@ -2,6 +2,7 @@ package edu.upb.desktop.service;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import edu.upb.desktop.model.LoginResultModel;
 import edu.upb.desktop.model.UserModel;
 
 import java.io.OutputStream;
@@ -12,9 +13,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class AuthService {
-    private final String baseUrl = System.getenv().getOrDefault("LB_UI_BASE_URL", "http://localhost:9000/tm");
+    private final String baseUrl = System.getenv().getOrDefault("LB_UI_BASE_URL", "http://localhost:1915/tm");
 
-    public UserModel login(String username, String password) throws Exception {
+    public LoginResultModel login(String username, String password) throws Exception {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("password", password);
@@ -30,11 +31,13 @@ public class AuthService {
         try (Reader reader = new java.io.InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)) {
             JsonObject resp = JsonParser.parseReader(reader).getAsJsonObject();
             JsonObject user = resp.getAsJsonObject("user");
-            return new UserModel(
+            UserModel userModel = new UserModel(
                     user.get("id").getAsLong(),
                     user.get("username").getAsString(),
                     user.get("nombre").getAsString(),
                     user.get("rol").getAsString());
+            String token = user.has("token") ? user.get("token").getAsString() : "";
+            return new LoginResultModel(userModel, token);
         }
     }
 

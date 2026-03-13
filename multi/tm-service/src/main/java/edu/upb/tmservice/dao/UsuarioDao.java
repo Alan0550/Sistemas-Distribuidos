@@ -105,4 +105,17 @@ public class UsuarioDao {
             }
         }
     }
+
+    public String findRoleById(Connection conn, long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT rol FROM usuarios WHERE id = ? LIMIT 1")) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("rol");
+                }
+            }
+        }
+        return null;
+    }
 }
