@@ -43,7 +43,7 @@ public class DesktopApp extends Application {
         Parent root = loader.load();
         EventsController controller = loader.getController();
         controller.loadInitialData();
-        applyScene(root);
+        applyScene(root, 1360, 820);
     }
 
     private void setScene(String resource) throws IOException {
@@ -53,7 +53,11 @@ public class DesktopApp extends Application {
     }
 
     private void applyScene(Parent root) {
-        Scene scene = new Scene(root, 980, 640);
+        applyScene(root, 980, 640);
+    }
+
+    private void applyScene(Parent root, int width, int height) {
+        Scene scene = new Scene(root, width, height);
         scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
         stage.setScene(scene);
     }

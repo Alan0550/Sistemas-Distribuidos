@@ -15,8 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BackendRegistry {
     private static final BackendRegistry INSTANCE = new BackendRegistry();
 
-    private final CopyOnWriteArrayList<String> backends = new CopyOnWriteArrayList<>();
-    private final Map<String, BackendState> states = new ConcurrentHashMap<>();
+    private final CopyOnWriteArrayList<String> balancingBackends = new CopyOnWriteArrayList<String>();
+    private final CopyOnWriteArrayList<String> verificationBackends = new CopyOnWriteArrayList<String>();
+    private final Map<String, BackendState> states = new ConcurrentHashMap<String, BackendState>();
     private final AtomicInteger idx = new AtomicInteger(0);
 
     private BackendRegistry() {
@@ -33,23 +34,32 @@ public class BackendRegistry {
 
     public String registerUrl(String rawUrl) {
         String normalized = normalizeUrl(rawUrl);
-        if (!backends.contains(normalized)) {
-            backends.add(normalized);
+        if (!verificationBackends.contains(normalized)) {
+            verificationBackends.add(normalized);
         }
-        states.putIfAbsent(normalized, new BackendState());
+        if (!balancingBackends.contains(normalized)) {
+            balancingBackends.add(normalized);
+        }
+
+        BackendState state = states.computeIfAbsent(normalized, b -> new BackendState());
+        state.inBalancing = true;
+        state.inVerification = true;
+        state.verificationFailCount = 0;
+        state.lastError = "";
+        state.nextHealthCheckMs = 0L;
         return normalized;
     }
 
     public String nextBackend() {
-        if (backends.isEmpty()) {
+        if (balancingBackends.isEmpty()) {
             return null;
         }
-        int size = backends.size();
+        int size = balancingBackends.size();
         for (int attempt = 0; attempt < size; attempt++) {
             int i = Math.floorMod(idx.getAndIncrement(), size);
-            String candidate = backends.get(i);
+            String candidate = balancingBackends.get(i);
             BackendState state = states.get(candidate);
-            if (state == null || state.inService) {
+            if (state != null && state.inBalancing) {
                 return candidate;
             }
         }
@@ -57,48 +67,76 @@ public class BackendRegistry {
     }
 
     public List<String> list() {
-        return new ArrayList<>(backends);
+        return new ArrayList<String>(verificationBackends);
+    }
+
+    public List<String> listBalancing() {
+        return new ArrayList<String>(balancingBackends);
     }
 
     public int countInService() {
-        int count = 0;
-        for (String backend : backends) {
-            BackendState state = states.get(backend);
-            if (state == null || state.inService) {
-                count++;
-            }
-        }
-        return count;
+        return balancingBackends.size();
     }
 
-    public void markSuccess(String backend, JsonObject metrics) {
+    public boolean shouldCheckNow(String backend, long nowMs) {
+        BackendState state = states.get(backend);
+        return state != null && state.inVerification && nowMs >= state.nextHealthCheckMs;
+    }
+
+    public void markRuntimeFailure(String backend, String reason, long retryIntervalMs) {
         BackendState state = states.computeIfAbsent(backend, b -> new BackendState());
-        state.inService = true;
-        state.failCount = 0;
+        balancingBackends.remove(backend);
+        state.inBalancing = false;
+        state.lastError = reason == null ? "runtime_failure" : reason;
+        state.nextHealthCheckMs = System.currentTimeMillis() + retryIntervalMs;
+    }
+
+    public void markHealthSuccess(String backend, JsonObject metrics, long okIntervalMs) {
+        BackendState state = states.computeIfAbsent(backend, b -> new BackendState());
+        if (!verificationBackends.contains(backend)) {
+            verificationBackends.add(backend);
+        }
+        if (!balancingBackends.contains(backend)) {
+            balancingBackends.add(backend);
+        }
+
+        state.inVerification = true;
+        state.inBalancing = true;
+        state.verificationFailCount = 0;
         state.lastError = "";
         state.lastCheckMs = System.currentTimeMillis();
+        state.nextHealthCheckMs = state.lastCheckMs + okIntervalMs;
         state.lastMetricsJson = metrics != null ? metrics.toString() : null;
     }
 
-    public void markFailure(String backend, String reason, int failThreshold) {
+    public void markHealthFailure(String backend, String reason, int failThreshold, long retryIntervalMs) {
         BackendState state = states.computeIfAbsent(backend, b -> new BackendState());
-        state.failCount = state.failCount + 1;
-        if (state.failCount >= failThreshold) {
-            state.inService = false;
-        }
-        state.lastError = reason == null ? "unknown_error" : reason;
+        balancingBackends.remove(backend);
+        state.inBalancing = false;
+        state.inVerification = true;
+        state.verificationFailCount = state.verificationFailCount + 1;
+        state.lastError = reason == null ? "health_failure" : reason;
         state.lastCheckMs = System.currentTimeMillis();
+        state.nextHealthCheckMs = state.lastCheckMs + retryIntervalMs;
+
+        if (state.verificationFailCount >= failThreshold) {
+            verificationBackends.remove(backend);
+            state.inVerification = false;
+        }
     }
 
     public JsonArray statusSnapshot() {
         JsonArray arr = new JsonArray();
-        for (String backend : backends) {
+        for (String backend : verificationBackends) {
             BackendState state = states.computeIfAbsent(backend, b -> new BackendState());
             JsonObject item = new JsonObject();
             item.addProperty("backend", backend);
-            item.addProperty("status", state.inService ? "UP" : "DOWN");
-            item.addProperty("in_service", state.inService);
-            item.addProperty("fail_count", state.failCount);
+            item.addProperty("status", state.inBalancing ? "UP" : "DOWN");
+            item.addProperty("in_service", state.inBalancing);
+            item.addProperty("in_balancing", state.inBalancing);
+            item.addProperty("in_verification", state.inVerification);
+            item.addProperty("fail_count", state.verificationFailCount);
+            item.addProperty("next_check_ms", state.nextHealthCheckMs);
             item.addProperty("last_check_ms", state.lastCheckMs);
             item.addProperty("last_error", state.lastError);
             if (state.lastMetricsJson != null && !state.lastMetricsJson.isEmpty()) {
@@ -113,8 +151,10 @@ public class BackendRegistry {
     }
 
     private static class BackendState {
-        private volatile boolean inService = true;
-        private volatile int failCount = 0;
+        private volatile boolean inBalancing = true;
+        private volatile boolean inVerification = true;
+        private volatile int verificationFailCount = 0;
+        private volatile long nextHealthCheckMs = 0L;
         private volatile long lastCheckMs = 0L;
         private volatile String lastError = "";
         private volatile String lastMetricsJson = null;

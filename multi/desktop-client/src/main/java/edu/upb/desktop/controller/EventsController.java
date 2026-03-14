@@ -2,40 +2,71 @@ package edu.upb.desktop.controller;
 
 import com.google.gson.JsonObject;
 import edu.upb.desktop.app.DesktopApp;
+import edu.upb.desktop.model.AdminUserModel;
 import edu.upb.desktop.model.EventModel;
 import edu.upb.desktop.model.PurchaseResultModel;
 import edu.upb.desktop.model.TicketTypeModel;
 import edu.upb.desktop.model.UserModel;
+import edu.upb.desktop.model.UserTicketHistoryModel;
+import edu.upb.desktop.service.AdminUserService;
 import edu.upb.desktop.service.EventService;
 import edu.upb.desktop.service.MonitorService;
 import edu.upb.desktop.service.TicketGrpcClient;
 import edu.upb.desktop.util.AlertUtil;
 import edu.upb.desktop.util.SessionManager;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EventsController {
     @FXML
     private Label welcomeLabel;
+
+    @FXML
+    private VBox adminPanel;
+
+    @FXML
+    private VBox adminUsersPanel;
+
+    @FXML
+    private VBox purchasePanel;
+
+    @FXML
+    private Button openEventWizardButton;
+
+    @FXML
+    private Label monitorStatusLabel;
+
+    @FXML
+    private Label monitorBackendsLabel;
+
+    @FXML
+    private Label monitorErrorsLabel;
+
+    @FXML
+    private Label monitorLastUpdateLabel;
 
     @FXML
     private TableView<EventModel> eventsTable;
@@ -59,56 +90,51 @@ public class EventsController {
     private Spinner<Integer> quantitySpinner;
 
     @FXML
-    private TextField eventNameField;
+    private TableView<AdminUserModel> usersTable;
 
     @FXML
-    private DatePicker eventDatePicker;
+    private TableColumn<AdminUserModel, Number> userIdColumn;
 
     @FXML
-    private Spinner<Integer> eventCapacitySpinner;
+    private TableColumn<AdminUserModel, String> usernameColumn;
 
     @FXML
-    private Spinner<Integer> eventHourSpinner;
+    private TableColumn<AdminUserModel, String> userNameColumn;
 
     @FXML
-    private Spinner<Integer> eventMinuteSpinner;
+    private TableColumn<AdminUserModel, String> userRoleColumn;
 
     @FXML
-    private Label selectedEventLabel;
+    private Label selectedUserLabel;
 
     @FXML
-    private Label remainingCapacityLabel;
+    private TableView<UserTicketHistoryModel> historyTable;
 
     @FXML
-    private TextField seatTypeField;
+    private TableColumn<UserTicketHistoryModel, Number> historyTicketIdColumn;
 
     @FXML
-    private Spinner<Integer> ticketTypeQuantitySpinner;
+    private TableColumn<UserTicketHistoryModel, String> historyEventColumn;
 
     @FXML
-    private TextField ticketTypePriceField;
+    private TableColumn<UserTicketHistoryModel, String> historyDateColumn;
 
     @FXML
-    private HBox adminPanel;
+    private TableColumn<UserTicketHistoryModel, String> historySeatTypeColumn;
 
     @FXML
-    private VBox purchasePanel;
+    private TableColumn<UserTicketHistoryModel, String> historySeatColumn;
 
     @FXML
-    private Label monitorStatusLabel;
-
-    @FXML
-    private Label monitorBackendsLabel;
-
-    @FXML
-    private Label monitorErrorsLabel;
-
-    @FXML
-    private Label monitorLastUpdateLabel;
+    private TableColumn<UserTicketHistoryModel, String> historyPriceColumn;
 
     private final EventService eventService = new EventService();
     private final MonitorService monitorService = new MonitorService();
+    private final AdminUserService adminUserService = new AdminUserService();
     private final TicketGrpcClient ticketGrpcClient = new TicketGrpcClient();
+    private final AtomicBoolean monitorFetchInFlight = new AtomicBoolean(false);
+
+    private Timeline monitorTimeline;
 
     @FXML
     private void initialize() {
@@ -116,14 +142,21 @@ public class EventsController {
         nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNombre()));
         dateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFecha()));
         capacityColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCapacidad()));
+
         quantitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1, 1));
         quantitySpinner.setDisable(true);
-        eventCapacitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50000, 100));
-        eventHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 20));
-        eventMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
-        ticketTypeQuantitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 0, 0));
-        ticketTypeQuantitySpinner.setDisable(true);
-        eventDatePicker.setValue(LocalDate.now());
+
+        userIdColumn.setCellValueFactory(data -> new SimpleLongProperty(data.getValue().getId()));
+        usernameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUsername()));
+        userNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNombre()));
+        userRoleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRol()));
+
+        historyTicketIdColumn.setCellValueFactory(data -> new SimpleLongProperty(data.getValue().getTicketId()));
+        historyEventColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEventName()));
+        historyDateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEventDate()));
+        historySeatTypeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSeatType()));
+        historySeatColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSeatNumber()));
+        historyPriceColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPrice()));
 
         eventsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
             if (selected != null) {
@@ -137,11 +170,13 @@ public class EventsController {
                 ticketTypeCombo.setItems(FXCollections.emptyObservableList());
                 updateQuantityLimit(null);
             }
-            updateEventSelection(selected);
         });
 
         ticketTypeCombo.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) ->
                 updateQuantityLimit(selected));
+
+        usersTable.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) ->
+                updateSelectedUserHistory(selected));
     }
 
     public void loadInitialData() {
@@ -150,112 +185,57 @@ public class EventsController {
             welcomeLabel.setText("Bienvenido, " + user.getNombre() + " (" + user.getRol() + ")");
         }
 
-        boolean isAdmin = user != null && "ADMIN".equalsIgnoreCase(user.getRol());
+        boolean isAdmin = isAdmin();
         adminPanel.setVisible(isAdmin);
         adminPanel.setManaged(isAdmin);
+        adminUsersPanel.setVisible(isAdmin);
+        adminUsersPanel.setManaged(isAdmin);
+        openEventWizardButton.setVisible(isAdmin);
+        openEventWizardButton.setManaged(isAdmin);
         purchasePanel.setVisible(!isAdmin);
         purchasePanel.setManaged(!isAdmin);
 
+        loadEvents();
         if (isAdmin) {
-            refreshMonitorPanel();
-        }
-
-        try {
-            List<EventModel> events = eventService.fetchEvents();
-            eventsTable.setItems(FXCollections.observableArrayList(events));
-            if (!events.isEmpty()) {
-                eventsTable.getSelectionModel().selectFirst();
-            } else {
-                ticketTypeCombo.setItems(FXCollections.emptyObservableList());
-                updateQuantityLimit(null);
-                updateEventSelection(null);
-            }
-        } catch (Exception e) {
-            AlertUtil.error("Eventos", "No se pudieron cargar los eventos");
+            loadAdminUsers();
+            startMonitorAutoRefresh();
+        } else {
+            stopMonitorAutoRefresh();
         }
     }
 
     @FXML
-    private void onCreateEvent() {
+    private void onOpenEventWizard() {
         if (!isAdmin()) {
             AlertUtil.error("Permisos", "Solo ADMIN puede crear eventos");
             return;
         }
+
         try {
-            String nombre = eventNameField.getText().trim();
-            int capacidad = eventCapacitySpinner.getValue();
-            LocalDate selectedDate = eventDatePicker.getValue();
-            if (selectedDate == null) {
-                AlertUtil.error("Evento", "Debes seleccionar una fecha");
-                return;
-            }
-            LocalDateTime dateTime = selectedDate.atTime(eventHourSpinner.getValue(), eventMinuteSpinner.getValue(), 0);
-            String fecha = dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/event-wizard.fxml"));
+            Parent root = loader.load();
+            EventWizardController controller = loader.getController();
+            controller.setOnEventCreated(event -> {
+                loadEvents();
+                selectEventById(event.getId());
+            });
 
-            EventModel created = eventService.createEvent(nombre, fecha, capacidad);
-            AlertUtil.info("Evento", "Evento creado. Ahora agrega sus tipos de ticket.");
-            eventNameField.clear();
-            eventDatePicker.setValue(LocalDate.now());
-
-            loadInitialData();
-            selectEventById(created.getId());
-        } catch (IllegalArgumentException e) {
-            AlertUtil.error("Evento", e.getMessage());
+            Stage dialog = new Stage();
+            dialog.setTitle("Crear evento");
+            dialog.initModality(Modality.APPLICATION_MODAL);
+            dialog.initOwner(openEventWizardButton.getScene().getWindow());
+            Scene scene = new Scene(root, 820, 620);
+            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+            dialog.setScene(scene);
+            dialog.showAndWait();
         } catch (Exception e) {
-            AlertUtil.error("Evento", "No se pudo crear el evento");
+            AlertUtil.error("Evento", "No se pudo abrir el asistente de eventos");
         }
     }
 
     @FXML
-    private void onAddTicketType() {
-        if (!isAdmin()) {
-            AlertUtil.error("Permisos", "Solo ADMIN puede agregar tipos de ticket");
-            return;
-        }
-        EventModel event = eventsTable.getSelectionModel().getSelectedItem();
-        if (event == null) {
-            AlertUtil.error("Tipo de ticket", "Primero crea o selecciona un evento");
-            return;
-        }
-
-        int remaining = event.getRemainingCapacity();
-        if (remaining <= 0) {
-            AlertUtil.error("Tipo de ticket", "El evento ya no tiene capacidad disponible");
-            return;
-        }
-
-        String seatType = seatTypeField.getText().trim();
-        int quantity = ticketTypeQuantitySpinner.getValue();
-        BigDecimal price;
-        try {
-            price = new BigDecimal(ticketTypePriceField.getText().trim());
-        } catch (Exception e) {
-            AlertUtil.error("Tipo de ticket", "El precio no es valido");
-            return;
-        }
-
-        if (seatType.isEmpty()) {
-            AlertUtil.error("Tipo de ticket", "Debes ingresar el tipo de asiento");
-            return;
-        }
-        if (quantity <= 0 || quantity > remaining) {
-            AlertUtil.error("Tipo de ticket", "La cantidad no puede superar la capacidad restante");
-            return;
-        }
-
-        try {
-            eventService.addTicketType(event.getId(), seatType, quantity, price);
-            AlertUtil.info("Tipo de ticket", "Tipo de ticket agregado correctamente");
-            seatTypeField.clear();
-            ticketTypePriceField.clear();
-
-            loadInitialData();
-            selectEventById(event.getId());
-        } catch (IllegalArgumentException e) {
-            AlertUtil.error("Tipo de ticket", e.getMessage());
-        } catch (Exception e) {
-            AlertUtil.error("Tipo de ticket", "No se pudo agregar el tipo de ticket");
-        }
+    private void onRefreshUsers() {
+        loadAdminUsers();
     }
 
     @FXML
@@ -294,7 +274,7 @@ public class EventsController {
                     "Primer ticket ID: " + result.getPrimerTicketId() +
                             "\nTickets creados: " + result.getTicketsCreados() +
                             "\nMensaje: " + result.getMensaje());
-            loadInitialData();
+            loadEvents();
             selectEventById(event.getId());
         } catch (Exception e) {
             String message = e.getMessage() != null ? e.getMessage() : "No se pudo realizar la compra";
@@ -305,6 +285,7 @@ public class EventsController {
     @FXML
     private void onLogout() {
         try {
+            stopMonitorAutoRefresh();
             SessionManager.clear();
             DesktopApp.getInstance().showLogin();
         } catch (Exception e) {
@@ -312,9 +293,43 @@ public class EventsController {
         }
     }
 
-    @FXML
-    private void onRefreshMonitor() {
-        refreshMonitorPanel();
+    private void loadEvents() {
+        try {
+            List<EventModel> events = eventService.fetchEvents();
+            eventsTable.setItems(FXCollections.observableArrayList(events));
+            if (!events.isEmpty()) {
+                eventsTable.getSelectionModel().selectFirst();
+            } else {
+                ticketTypeCombo.setItems(FXCollections.emptyObservableList());
+                updateQuantityLimit(null);
+            }
+        } catch (Exception e) {
+            AlertUtil.error("Eventos", "No se pudieron cargar los eventos");
+        }
+    }
+
+    private void loadAdminUsers() {
+        try {
+            List<AdminUserModel> users = adminUserService.fetchUsersWithHistory();
+            usersTable.setItems(FXCollections.observableArrayList(users));
+            if (!users.isEmpty()) {
+                usersTable.getSelectionModel().selectFirst();
+            } else {
+                updateSelectedUserHistory(null);
+            }
+        } catch (Exception e) {
+            AlertUtil.error("Usuarios", "No se pudieron cargar los usuarios");
+        }
+    }
+
+    private void updateSelectedUserHistory(AdminUserModel selected) {
+        if (selected == null) {
+            selectedUserLabel.setText("Historial de compras: sin seleccion");
+            historyTable.setItems(FXCollections.emptyObservableList());
+            return;
+        }
+        selectedUserLabel.setText("Historial de compras: " + selected.getNombre() + " (" + selected.getUsername() + ")");
+        historyTable.setItems(FXCollections.observableArrayList(selected.getHistorial()));
     }
 
     private void updateQuantityLimit(TicketTypeModel selected) {
@@ -331,29 +346,59 @@ public class EventsController {
         quantitySpinner.setDisable(false);
     }
 
-    private void updateEventSelection(EventModel selected) {
-        if (selected == null) {
-            selectedEventLabel.setText("Evento seleccionado: ninguno");
-            remainingCapacityLabel.setText("Capacidad restante: 0");
-            ticketTypeQuantitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 0, 0));
-            ticketTypeQuantitySpinner.setDisable(true);
+    private void startMonitorAutoRefresh() {
+        stopMonitorAutoRefresh();
+        monitorTimeline = new Timeline(new KeyFrame(Duration.seconds(3), event -> refreshMonitorPanelAsync()));
+        monitorTimeline.setCycleCount(Timeline.INDEFINITE);
+        monitorTimeline.play();
+        refreshMonitorPanelAsync();
+    }
+
+    private void stopMonitorAutoRefresh() {
+        if (monitorTimeline != null) {
+            monitorTimeline.stop();
+            monitorTimeline = null;
+        }
+    }
+
+    private void refreshMonitorPanelAsync() {
+        if (!monitorFetchInFlight.compareAndSet(false, true)) {
             return;
         }
 
-        int remaining = selected.getRemainingCapacity();
-        selectedEventLabel.setText("Evento seleccionado: " + selected.getNombre() + " (ID " + selected.getId() + ")");
-        remainingCapacityLabel.setText("Capacidad restante: " + remaining);
+        Thread thread = new Thread(() -> {
+            try {
+                JsonObject health = monitorService.fetchHealth();
+                JsonObject metrics = monitorService.fetchMetrics();
+                Platform.runLater(() -> applyMonitorData(health, metrics));
+            } catch (Exception e) {
+                Platform.runLater(this::applyMonitorDown);
+            } finally {
+                monitorFetchInFlight.set(false);
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
 
-        if (remaining <= 0) {
-            ticketTypeQuantitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 0, 0));
-            ticketTypeQuantitySpinner.setDisable(true);
-            return;
-        }
+    private void applyMonitorData(JsonObject health, JsonObject metrics) {
+        String status = health.has("status") ? health.get("status").getAsString() : "UNKNOWN";
+        int inService = health.has("in_service_backends") ? health.get("in_service_backends").getAsInt() : 0;
+        int total = health.has("registered_backends") ? health.get("registered_backends").getAsInt() : 0;
+        long errors = metrics.has("errors_total") ? metrics.get("errors_total").getAsLong() : 0L;
+        long requests = metrics.has("requests_total") ? metrics.get("requests_total").getAsLong() : 0L;
 
-        int current = ticketTypeQuantitySpinner.getValueFactory() != null ? ticketTypeQuantitySpinner.getValue() : 1;
-        int safeValue = Math.min(Math.max(current, 1), remaining);
-        ticketTypeQuantitySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, remaining, safeValue));
-        ticketTypeQuantitySpinner.setDisable(false);
+        monitorStatusLabel.setText("Estado sistema: " + status);
+        monitorBackendsLabel.setText("Backends activos: " + inService + " / " + total);
+        monitorErrorsLabel.setText("Errores: " + errors + " de " + requests + " requests");
+        monitorLastUpdateLabel.setText("Actualizacion automatica: " + java.time.LocalTime.now().withNano(0));
+    }
+
+    private void applyMonitorDown() {
+        monitorStatusLabel.setText("Estado sistema: DOWN");
+        monitorBackendsLabel.setText("Backends activos: 0 / 0");
+        monitorErrorsLabel.setText("Errores: no disponible");
+        monitorLastUpdateLabel.setText("Actualizacion automatica: " + java.time.LocalTime.now().withNano(0));
     }
 
     private void selectEventById(long eventId) {
@@ -363,29 +408,6 @@ public class EventsController {
                 eventsTable.scrollTo(event);
                 break;
             }
-        }
-    }
-
-    private void refreshMonitorPanel() {
-        try {
-            JsonObject health = monitorService.fetchHealth();
-            JsonObject metrics = monitorService.fetchMetrics();
-
-            String status = health.has("status") ? health.get("status").getAsString() : "UNKNOWN";
-            int inService = health.has("in_service_backends") ? health.get("in_service_backends").getAsInt() : 0;
-            int total = health.has("registered_backends") ? health.get("registered_backends").getAsInt() : 0;
-            long errors = metrics.has("errors_total") ? metrics.get("errors_total").getAsLong() : 0L;
-            long requests = metrics.has("requests_total") ? metrics.get("requests_total").getAsLong() : 0L;
-
-            monitorStatusLabel.setText("Estado sistema: " + status);
-            monitorBackendsLabel.setText("Backends activos: " + inService + " / " + total);
-            monitorErrorsLabel.setText("Errores: " + errors + " de " + requests + " requests");
-            monitorLastUpdateLabel.setText("Ultima actualizacion: " + java.time.LocalTime.now().withNano(0));
-        } catch (Exception e) {
-            monitorStatusLabel.setText("Estado sistema: DOWN");
-            monitorBackendsLabel.setText("Backends activos: 0 / 0");
-            monitorErrorsLabel.setText("Errores: no disponible");
-            monitorLastUpdateLabel.setText("Ultima actualizacion: " + java.time.LocalTime.now().withNano(0));
         }
     }
 

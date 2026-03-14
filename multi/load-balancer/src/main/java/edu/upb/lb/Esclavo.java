@@ -16,7 +16,9 @@ public class Esclavo extends Thread {
     private static final Logger log = LoggerFactory.getLogger(Esclavo.class);
 
     private final BackendRegistry registry;
-    private final long intervalMs;
+    private final long okIntervalMs;
+    private final long retryIntervalMs;
+    private final long loopSleepMs;
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
     private final int failThreshold;
@@ -24,7 +26,9 @@ public class Esclavo extends Thread {
 
     public Esclavo(BackendRegistry registry) {
         this.registry = registry;
-        this.intervalMs = Long.parseLong(System.getenv().getOrDefault("LB_WORKER_INTERVAL_MS", "5000"));
+        this.okIntervalMs = Long.parseLong(System.getenv().getOrDefault("LB_WORKER_OK_INTERVAL_MS", "30000"));
+        this.retryIntervalMs = Long.parseLong(System.getenv().getOrDefault("LB_WORKER_RETRY_INTERVAL_MS", "10000"));
+        this.loopSleepMs = Long.parseLong(System.getenv().getOrDefault("LB_WORKER_LOOP_SLEEP_MS", "1000"));
         this.connectTimeoutMs = Integer.parseInt(System.getenv().getOrDefault("LB_WORKER_CONNECT_TIMEOUT_MS", "1500"));
         this.readTimeoutMs = Integer.parseInt(System.getenv().getOrDefault("LB_WORKER_READ_TIMEOUT_MS", "1500"));
         int configuredThreshold = Integer.parseInt(System.getenv().getOrDefault("LB_WORKER_FAIL_THRESHOLD", "3"));
@@ -35,31 +39,34 @@ public class Esclavo extends Thread {
 
     @Override
     public void run() {
-        log.info("Esclavo started (intervalMs={}, failThreshold={})", intervalMs, failThreshold);
+        log.info("Esclavo started (okIntervalMs={}, retryIntervalMs={}, failThreshold={})",
+                okIntervalMs, retryIntervalMs, failThreshold);
         while (true) {
             if (!running) {
                 break;
             }
 
+            long nowMs = System.currentTimeMillis();
             List<String> backends = registry.list();
             for (String backend : backends) {
-                // Verifique la salud del backend consultando su API
+                if (!registry.shouldCheckNow(backend, nowMs)) {
+                    continue;
+                }
+
                 JsonObject metrics = consultarSalud(backend);
                 if (metrics != null) {
                     String status = metrics.has("status") ? metrics.get("status").getAsString() : "UNKNOWN";
                     if ("UP".equalsIgnoreCase(status)) {
-                        // Si esta UP, se mantiene en servicio
-                        registry.markSuccess(backend, metrics);
+                        registry.markHealthSuccess(backend, metrics, okIntervalMs);
                     } else {
-                        // Si no esta UP, cuenta fallo y puede salir de servicio
-                        registry.markFailure(backend, "status_" + status, failThreshold);
+                        registry.markHealthFailure(backend, "status_" + status, failThreshold, retryIntervalMs);
                         log.warn("Health check reported non-UP for {} (status={})", backend, status);
                     }
                 }
             }
 
             try {
-                Thread.sleep(intervalMs);
+                Thread.sleep(loopSleepMs);
             } catch (InterruptedException e) {
                 if (!running) {
                     Thread.currentThread().interrupt();
@@ -86,7 +93,7 @@ public class Esclavo extends Thread {
 
             int statusCode = conn.getResponseCode();
             if (statusCode != 200) {
-                registry.markFailure(backend, "http_" + statusCode, failThreshold);
+                registry.markHealthFailure(backend, "http_" + statusCode, failThreshold, retryIntervalMs);
                 log.warn("Health check failed for {} (status={})", backend, statusCode);
                 return null;
             }
@@ -94,7 +101,7 @@ public class Esclavo extends Thread {
             String body = readAll(conn.getInputStream());
             return JsonParser.parseString(body).getAsJsonObject();
         } catch (Exception e) {
-            registry.markFailure(backend, e.getClass().getSimpleName(), failThreshold);
+            registry.markHealthFailure(backend, e.getClass().getSimpleName(), failThreshold, retryIntervalMs);
             log.warn("Health check exception for {}: {}", backend, e.getClass().getSimpleName());
             return null;
         } finally {

@@ -1,6 +1,10 @@
 package edu.upb.tmservice.dao;
 
+import edu.upb.tmservice.DatabaseConnection;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,5 +47,34 @@ public class TicketDao {
             }
         }
         return ticketId;
+    }
+
+    public List<TicketHistoryEntity> listHistoryByUserId(long userId) throws SQLException {
+        List<TicketHistoryEntity> history = new ArrayList<TicketHistoryEntity>();
+        String sql = "SELECT t.id, t.id_evento, e.nombre AS evento_nombre, e.fecha AS evento_fecha, " +
+                "t.nro_asiento, tt.tipo_asiento, t.precio " +
+                "FROM tickets t " +
+                "JOIN eventos e ON e.id = t.id_evento " +
+                "JOIN tipo_ticket tt ON tt.id = t.id_tipo_ticket " +
+                "WHERE t.id_usuario = ? " +
+                "ORDER BY e.fecha DESC, t.id DESC";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    history.add(new TicketHistoryEntity(
+                            rs.getLong("id"),
+                            rs.getLong("id_evento"),
+                            rs.getString("evento_nombre"),
+                            rs.getTimestamp("evento_fecha"),
+                            rs.getString("nro_asiento"),
+                            rs.getString("tipo_asiento"),
+                            rs.getBigDecimal("precio")));
+                }
+            }
+        }
+        return history;
     }
 }

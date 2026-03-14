@@ -40,6 +40,8 @@ public class ProxyHandler implements HttpHandler {
             .parseInt(System.getenv().getOrDefault("LB_CONNECT_TIMEOUT_MS", "10000"));
     private static final int READ_TIMEOUT_MS = Integer
             .parseInt(System.getenv().getOrDefault("LB_READ_TIMEOUT_MS", "5000"));
+    private static final long WORKER_RETRY_INTERVAL_MS = Long
+            .parseLong(System.getenv().getOrDefault("LB_WORKER_RETRY_INTERVAL_MS", "10000"));
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -80,6 +82,8 @@ public class ProxyHandler implements HttpHandler {
         }
         out.addProperty("registered_backends", BackendRegistry.getInstance().list().size());
         out.addProperty("in_service_backends", BackendRegistry.getInstance().countInService());
+        out.add("balancing_backends", toJsonArray(BackendRegistry.getInstance().listBalancing()));
+        out.add("verification_backends", toJsonArray(BackendRegistry.getInstance().list()));
         out.add("backend_status", BackendRegistry.getInstance().statusSnapshot());
         sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
     }
@@ -92,14 +96,13 @@ public class ProxyHandler implements HttpHandler {
         }
 
         if ("GET".equals(method)) {
-            List<String> list = BackendRegistry.getInstance().list();
-            JsonArray arr = new JsonArray();
-            for (String b : list) {
-                arr.add(b);
-            }
+            List<String> verificationList = BackendRegistry.getInstance().list();
+            List<String> balancingList = BackendRegistry.getInstance().listBalancing();
             JsonObject out = new JsonObject();
-            out.add("backends", arr);
-            out.addProperty("count", list.size());
+            out.add("backends", toJsonArray(verificationList));
+            out.add("verification_backends", toJsonArray(verificationList));
+            out.add("balancing_backends", toJsonArray(balancingList));
+            out.addProperty("count", verificationList.size());
             out.addProperty("in_service_count", BackendRegistry.getInstance().countInService());
             out.add("backend_status", BackendRegistry.getInstance().statusSnapshot());
             sendResponse(he, 200, out.toString().getBytes(StandardCharsets.UTF_8));
@@ -194,6 +197,7 @@ public class ProxyHandler implements HttpHandler {
                 String firstErrorType = classifyErrorType(firstError);
 
                 if ("POST".equals(method) && "READ".equals(firstErrorType)) {
+                    registryRuntimeFailure(backend, firstErrorType);
                     log.warn("Read timeout for {}. Checking if first attempt was saved.", requestPath);
 
                     if (wasSavedAfterTimeout(client, backend, requestUsername)) {
@@ -215,6 +219,7 @@ public class ProxyHandler implements HttpHandler {
                         return;
                     } catch (Exception secondError) {
                         String secondErrorType = classifyErrorType(secondError);
+                        registryRuntimeFailure(backend, secondErrorType);
                         if (wasSavedAfterTimeout(client, backend, requestUsername)) {
                             byte[] ok = "{\"status\":\"OK\",\"message\":\"Guardado confirmado tras reintento\"}"
                                     .getBytes(StandardCharsets.UTF_8);
@@ -228,6 +233,7 @@ public class ProxyHandler implements HttpHandler {
                     }
                 }
 
+                registryRuntimeFailure(backend, firstErrorType);
                 error = true;
                 sendProxyError(he, firstErrorType, firstError, requestPath, backend, start);
             }
@@ -323,6 +329,13 @@ public class ProxyHandler implements HttpHandler {
         }
     }
 
+    private void registryRuntimeFailure(String backend, String errorType) {
+        if (backend == null || backend.trim().isEmpty()) {
+            return;
+        }
+        BackendRegistry.getInstance().markRuntimeFailure(backend, "request_" + errorType, WORKER_RETRY_INTERVAL_MS);
+    }
+
     private void sendProxyError(HttpExchange he, String errorType, Exception e, String requestPath,
             String backend, long start) throws IOException {
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
@@ -368,6 +381,14 @@ public class ProxyHandler implements HttpHandler {
         try (OutputStream os = he.getResponseBody()) {
             os.write(body);
         }
+    }
+
+    private JsonArray toJsonArray(List<String> items) {
+        JsonArray arr = new JsonArray();
+        for (String item : items) {
+            arr.add(item);
+        }
+        return arr;
     }
 
     private static class ForwardResult {

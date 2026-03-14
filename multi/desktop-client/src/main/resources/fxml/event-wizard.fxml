@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.upb.desktop.controller.EventWizardController"
+      spacing="16" styleClass="screen-root">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <Label text="Asistente de creacion de eventos" styleClass="title-label"/>
+
+    <VBox fx:id="stepOnePane" spacing="12" styleClass="card-panel">
+        <Label text="Paso 1: Datos del evento" styleClass="subtitle-label"/>
+        <TextField fx:id="eventNameField" promptText="Nombre del evento"/>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <DatePicker fx:id="eventDatePicker"/>
+            <Label text="Hora"/>
+            <Spinner fx:id="eventHourSpinner" prefWidth="80"/>
+            <Label text="Min"/>
+            <Spinner fx:id="eventMinuteSpinner" prefWidth="80"/>
+        </HBox>
+        <Spinner fx:id="eventCapacitySpinner"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancelar" onAction="#onCancel" styleClass="secondary-button"/>
+            <Button text="Siguiente" onAction="#onNextStep" styleClass="primary-button"/>
+        </HBox>
+    </VBox>
+
+    <VBox fx:id="stepTwoPane" spacing="12" styleClass="card-panel">
+        <Label text="Paso 2: Configurar tipos de asiento" styleClass="subtitle-label"/>
+        <Label fx:id="wizardSummaryLabel" text="Evento"/>
+        <Label fx:id="remainingCapacityLabel" text="Capacidad restante por asignar: 0"/>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <TextField fx:id="seatTypeField" promptText="Tipo de asiento"/>
+            <Spinner fx:id="ticketTypeQuantitySpinner" prefWidth="110"/>
+            <TextField fx:id="ticketTypePriceField" promptText="Precio" prefWidth="120"/>
+            <Button text="Agregar" onAction="#onAddTicketType" styleClass="primary-button"/>
+            <Button text="Quitar" onAction="#onRemoveTicketType" styleClass="secondary-button"/>
+        </HBox>
+
+        <TableView fx:id="ticketTypesTable" prefHeight="260">
+            <columns>
+                <TableColumn fx:id="seatTypeColumn" text="Tipo" prefWidth="220"/>
+                <TableColumn fx:id="quantityColumn" text="Cantidad" prefWidth="120"/>
+                <TableColumn fx:id="priceColumn" text="Precio" prefWidth="120"/>
+            </columns>
+        </TableView>
+
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Volver" onAction="#onBackStep" styleClass="secondary-button"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancelar" onAction="#onCancel" styleClass="secondary-button"/>
+            <Button fx:id="finishButton" text="Guardar evento" onAction="#onFinish" styleClass="primary-button"/>
+        </HBox>
+    </VBox>
+</VBox>

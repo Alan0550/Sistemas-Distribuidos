@@ -69,6 +69,14 @@ public class EventsHandler implements HttpHandler {
                     handleCreateEvent(he);
                     return;
                 }
+                if ("/events/full".equals(requestPath)) {
+                    if (!isAdmin(session)) {
+                        sendForbidden(he);
+                        return;
+                    }
+                    handleCreateFullEvent(he);
+                    return;
+                }
                 if (requestPath.matches("^/events/\\d+/ticket-types$")) {
                     if (!isAdmin(session)) {
                         sendForbidden(he);
@@ -252,6 +260,100 @@ public class EventsHandler implements HttpHandler {
         resp.addProperty("precio", precio);
         resp.addProperty("capacidad_restante", remainingCapacity);
         sendJson(he, 201, resp);
+    }
+
+    private void handleCreateFullEvent(HttpExchange he) throws Exception {
+        JsonObject body = JsonParser.parseReader(
+                new InputStreamReader(he.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
+
+        String nombre = body.has("nombre") ? body.get("nombre").getAsString().trim() : "";
+        String fecha = body.has("fecha") ? body.get("fecha").getAsString().trim() : "";
+        int capacidad = body.has("capacidad") ? body.get("capacidad").getAsInt() : 0;
+        JsonArray tipos = body.has("tipos_ticket") ? body.getAsJsonArray("tipos_ticket") : new JsonArray();
+
+        if (nombre.isEmpty() || fecha.isEmpty() || capacidad <= 0 || tipos.isEmpty()) {
+            JsonObject resp = new JsonObject();
+            resp.addProperty("status", "NOK");
+            resp.addProperty("message", "Debes completar evento y tipos de ticket");
+            sendJson(he, 400, resp);
+            return;
+        }
+
+        Timestamp fechaTs;
+        try {
+            fechaTs = Timestamp.valueOf(fecha);
+        } catch (IllegalArgumentException e) {
+            JsonObject resp = new JsonObject();
+            resp.addProperty("status", "NOK");
+            resp.addProperty("message", "La fecha debe tener formato yyyy-MM-dd HH:mm:ss");
+            sendJson(he, 400, resp);
+            return;
+        }
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int assignedCapacity = 0;
+                for (int i = 0; i < tipos.size(); i++) {
+                    JsonObject tipo = tipos.get(i).getAsJsonObject();
+                    String tipoAsiento = tipo.has("tipo_asiento") ? tipo.get("tipo_asiento").getAsString().trim() : "";
+                    int cantidad = tipo.has("cantidad") ? tipo.get("cantidad").getAsInt() : 0;
+                    java.math.BigDecimal precio = tipo.has("precio")
+                            ? tipo.get("precio").getAsBigDecimal()
+                            : java.math.BigDecimal.ZERO;
+
+                    if (tipoAsiento.isEmpty() || cantidad <= 0 || precio.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                        throw new IllegalArgumentException("Todos los tipos de ticket deben ser validos");
+                    }
+                    assignedCapacity += cantidad;
+                    if (assignedCapacity > capacidad) {
+                        throw new IllegalArgumentException("La suma de asientos supera la capacidad del evento");
+                    }
+                }
+
+                if (assignedCapacity != capacidad) {
+                    throw new IllegalArgumentException("Debes asignar exactamente toda la capacidad del evento");
+                }
+
+                long eventId = eventoDao.createEvent(conn, nombre, fechaTs, capacidad);
+                JsonArray tiposResp = new JsonArray();
+                for (int i = 0; i < tipos.size(); i++) {
+                    JsonObject tipo = tipos.get(i).getAsJsonObject();
+                    String tipoAsiento = tipo.get("tipo_asiento").getAsString().trim();
+                    int cantidad = tipo.get("cantidad").getAsInt();
+                    java.math.BigDecimal precio = tipo.get("precio").getAsBigDecimal();
+
+                    long ticketTypeId = tipoTicketDao.create(conn, eventId, tipoAsiento, cantidad, precio);
+                    JsonObject tipoResp = new JsonObject();
+                    tipoResp.addProperty("id", ticketTypeId);
+                    tipoResp.addProperty("tipo_asiento", tipoAsiento);
+                    tipoResp.addProperty("cantidad", cantidad);
+                    tipoResp.addProperty("precio", precio);
+                    tiposResp.add(tipoResp);
+                }
+                conn.commit();
+
+                JsonObject resp = new JsonObject();
+                resp.addProperty("status", "OK");
+                resp.addProperty("id", eventId);
+                resp.addProperty("nombre", nombre);
+                resp.addProperty("fecha", fechaTs.toString());
+                resp.addProperty("capacidad", capacidad);
+                resp.add("tipos_ticket", tiposResp);
+                sendJson(he, 201, resp);
+            } catch (IllegalArgumentException e) {
+                conn.rollback();
+                JsonObject resp = new JsonObject();
+                resp.addProperty("status", "NOK");
+                resp.addProperty("message", e.getMessage());
+                sendJson(he, 409, resp);
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
     }
 
     private JsonArray loadTiposTicket(Connection conn, long eventId) throws SQLException {

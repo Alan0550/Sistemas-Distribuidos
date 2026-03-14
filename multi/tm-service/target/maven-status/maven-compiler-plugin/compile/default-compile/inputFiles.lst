@@ -3,6 +3,7 @@ C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tms
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoEntity.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\PurchaseLookup.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketDao.java
+C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketHistoryEntity.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketDao.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketEntity.java
 C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioDao.java

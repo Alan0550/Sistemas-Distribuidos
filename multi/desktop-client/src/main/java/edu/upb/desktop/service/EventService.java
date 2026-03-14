@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import edu.upb.desktop.model.EventModel;
+import edu.upb.desktop.model.EventTicketTypeDraftModel;
 import edu.upb.desktop.model.TicketTypeModel;
 import edu.upb.desktop.util.SessionManager;
 
@@ -105,6 +106,53 @@ public class EventService {
                     item.get("tipo_asiento").getAsString(),
                     item.get("cantidad").getAsInt(),
                     item.get("precio").getAsBigDecimal());
+        }
+    }
+
+    public EventModel createFullEvent(String nombre, String fecha, int capacidad, List<EventTicketTypeDraftModel> ticketTypes)
+            throws Exception {
+        JsonObject body = new JsonObject();
+        body.addProperty("nombre", nombre);
+        body.addProperty("fecha", fecha);
+        body.addProperty("capacidad", capacidad);
+
+        JsonArray types = new JsonArray();
+        for (EventTicketTypeDraftModel draft : ticketTypes) {
+            JsonObject type = new JsonObject();
+            type.addProperty("tipo_asiento", draft.getSeatType());
+            type.addProperty("cantidad", draft.getQuantity());
+            type.addProperty("precio", draft.getPrice());
+            types.add(type);
+        }
+        body.add("tipos_ticket", types);
+
+        HttpURLConnection conn = openConnection(baseUrl + "/events/full", "POST");
+        writeBody(conn, body.toString());
+
+        if (conn.getResponseCode() != 201) {
+            throw new IllegalArgumentException(readErrorMessage(conn, "No se pudo crear el evento completo"));
+        }
+
+        try (Reader reader = new java.io.InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)) {
+            JsonObject item = JsonParser.parseReader(reader).getAsJsonObject();
+            List<TicketTypeModel> createdTypes = new ArrayList<TicketTypeModel>();
+            JsonArray createdArray = item.getAsJsonArray("tipos_ticket");
+            if (createdArray != null) {
+                for (JsonElement el : createdArray) {
+                    JsonObject type = el.getAsJsonObject();
+                    createdTypes.add(new TicketTypeModel(
+                            type.get("id").getAsLong(),
+                            type.get("tipo_asiento").getAsString(),
+                            type.get("cantidad").getAsInt(),
+                            type.get("precio").getAsBigDecimal()));
+                }
+            }
+            return new EventModel(
+                    item.get("id").getAsLong(),
+                    item.get("nombre").getAsString(),
+                    item.get("fecha").getAsString(),
+                    item.get("capacidad").getAsInt(),
+                    createdTypes);
         }
     }
 

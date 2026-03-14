@@ -41,9 +41,14 @@ public class EventoDao {
     }
 
     public long createEvent(String nombre, Timestamp fecha, int capacidad) throws SQLException {
+        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+            return createEvent(conn, nombre, fecha, capacidad);
+        }
+    }
+
+    public long createEvent(Connection conn, String nombre, Timestamp fecha, int capacidad) throws SQLException {
         long eventId = 0;
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-                PreparedStatement ps = conn.prepareStatement(
+        try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO eventos (nombre, fecha, capacidad) VALUES (?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, nombre);

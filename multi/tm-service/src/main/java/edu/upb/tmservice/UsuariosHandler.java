@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import edu.upb.tmservice.dao.TicketDao;
+import edu.upb.tmservice.dao.TicketHistoryEntity;
 import edu.upb.tmservice.dao.UsuarioDao;
 import edu.upb.tmservice.dao.UsuarioEntity;
 import org.mindrot.jbcrypt.BCrypt;
@@ -24,6 +26,7 @@ import java.util.List;
 public class UsuariosHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(UsuariosHandler.class);
     private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final TicketDao ticketDao = new TicketDao();
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -47,6 +50,33 @@ public class UsuariosHandler implements HttpHandler {
             }
 
             if ("GET".equals(method)) {
+                boolean includeHistory = "true".equalsIgnoreCase(getQueryParam(he, "include_history"));
+                if (includeHistory) {
+                    AuthSessionStore.SessionData session = requireSession(he);
+                    if (session == null) {
+                        return;
+                    }
+                    if (!"ADMIN".equalsIgnoreCase(session.getRol())) {
+                        sendSimpleJson(he, 403, "{\"status\":\"NOK\",\"message\":\"Acceso denegado para este rol\"}");
+                        return;
+                    }
+                    JsonObject response = new JsonObject();
+                    JsonArray usersArr = new JsonArray();
+                    List<UsuarioEntity> users = usuarioDao.listPublicUsers();
+                    for (UsuarioEntity entity : users) {
+                        JsonObject user = toJsonUser(entity);
+                        user.add("historial", toJsonHistory(ticketDao.listHistoryByUserId(entity.getId())));
+                        usersArr.add(user);
+                    }
+                    response.add("users", usersArr);
+                    byte[] out = response.toString().getBytes(StandardCharsets.UTF_8);
+                    he.sendResponseHeaders(200, out.length);
+                    try (OutputStream os = he.getResponseBody()) {
+                        os.write(out);
+                    }
+                    return;
+                }
+
                 String usernameFilter = getQueryParam(he, "username");
                 if (usernameFilter != null && !usernameFilter.isEmpty()) {
                     UsuarioEntity entity = usuarioDao.findPublicByUsername(usernameFilter);
@@ -170,6 +200,22 @@ public class UsuariosHandler implements HttpHandler {
         return user;
     }
 
+    private JsonArray toJsonHistory(List<TicketHistoryEntity> history) {
+        JsonArray arr = new JsonArray();
+        for (TicketHistoryEntity item : history) {
+            JsonObject row = new JsonObject();
+            row.addProperty("ticket_id", item.getTicketId());
+            row.addProperty("event_id", item.getEventId());
+            row.addProperty("event_name", item.getEventName());
+            row.addProperty("event_date", item.getEventDate() != null ? item.getEventDate().toString() : "");
+            row.addProperty("seat_number", item.getSeatNumber());
+            row.addProperty("seat_type", item.getSeatType());
+            row.addProperty("price", item.getPrice());
+            arr.add(row);
+        }
+        return arr;
+    }
+
     private String getQueryParam(HttpExchange he, String key) {
         String raw = he.getRequestURI().getRawQuery();
         if (raw == null || raw.isEmpty()) {
@@ -183,5 +229,29 @@ public class UsuariosHandler implements HttpHandler {
             }
         }
         return null;
+    }
+
+    private AuthSessionStore.SessionData requireSession(HttpExchange he) throws IOException {
+        String authHeader = he.getRequestHeaders().getFirst("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            sendSimpleJson(he, 401, "{\"status\":\"NOK\",\"message\":\"No autorizado\"}");
+            return null;
+        }
+
+        String token = authHeader.substring("Bearer ".length()).trim();
+        AuthSessionStore.SessionData session = AuthSessionStore.getInstance().getSession(token);
+        if (session == null) {
+            sendSimpleJson(he, 401, "{\"status\":\"NOK\",\"message\":\"Sesion invalida o expirada\"}");
+            return null;
+        }
+        return session;
+    }
+
+    private void sendSimpleJson(HttpExchange he, int statusCode, String bodyText) throws IOException {
+        byte[] out = bodyText.getBytes(StandardCharsets.UTF_8);
+        he.sendResponseHeaders(statusCode, out.length);
+        try (OutputStream os = he.getResponseBody()) {
+            os.write(out);
+        }
     }
 }

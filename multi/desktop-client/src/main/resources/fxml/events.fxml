@@ -3,13 +3,12 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Spinner?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
@@ -23,58 +22,78 @@
     <HBox spacing="12" alignment="CENTER_LEFT">
         <Label fx:id="welcomeLabel" text="Bienvenido" styleClass="title-label"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Cerrar sesión" onAction="#onLogout" styleClass="secondary-button"/>
+        <Button text="Cerrar sesion" onAction="#onLogout" styleClass="secondary-button"/>
     </HBox>
 
-    <HBox spacing="16" fx:id="adminPanel">
-        <VBox spacing="10" styleClass="card-panel">
-            <Label text="Paso 1: Crear evento" styleClass="subtitle-label"/>
-            <TextField fx:id="eventNameField" promptText="Nombre del evento"/>
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <DatePicker fx:id="eventDatePicker"/>
-                <Label text="Hora"/>
-                <Spinner fx:id="eventHourSpinner" prefWidth="80"/>
-                <Label text="Min"/>
-                <Spinner fx:id="eventMinuteSpinner" prefWidth="80"/>
-            </HBox>
-            <Spinner fx:id="eventCapacitySpinner"/>
-            <Button text="Crear evento" onAction="#onCreateEvent" styleClass="primary-button"/>
-        </VBox>
-
-        <VBox spacing="10" styleClass="card-panel">
-            <Label text="Paso 2: Agregar tipos de ticket" styleClass="subtitle-label"/>
-            <Label fx:id="selectedEventLabel" text="Evento seleccionado: ninguno"/>
-            <Label fx:id="remainingCapacityLabel" text="Capacidad restante: 0"/>
-            <TextField fx:id="seatTypeField" promptText="Tipo de asiento (VIP, General, etc.)"/>
-            <Spinner fx:id="ticketTypeQuantitySpinner"/>
-            <TextField fx:id="ticketTypePriceField" promptText="Precio"/>
-            <Button text="Agregar tipo de ticket" onAction="#onAddTicketType" styleClass="primary-button"/>
-        </VBox>
-
-        <VBox spacing="10" styleClass="card-panel">
-            <Label text="Monitoreo" styleClass="subtitle-label"/>
-            <Label fx:id="monitorStatusLabel" text="Estado sistema: -"/>
-            <Label fx:id="monitorBackendsLabel" text="Backends activos: -"/>
-            <Label fx:id="monitorErrorsLabel" text="Errores: -"/>
-            <Label fx:id="monitorLastUpdateLabel" text="Ultima actualizacion: -"/>
-            <Button text="Actualizar monitoreo" onAction="#onRefreshMonitor" styleClass="secondary-button"/>
-        </VBox>
-    </HBox>
-
-    <TableView fx:id="eventsTable" prefHeight="360" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="idColumn" text="ID" prefWidth="80"/>
-            <TableColumn fx:id="nameColumn" text="Evento" prefWidth="260"/>
-            <TableColumn fx:id="dateColumn" text="Fecha" prefWidth="220"/>
-            <TableColumn fx:id="capacityColumn" text="Capacidad" prefWidth="120"/>
-        </columns>
-    </TableView>
-
-    <VBox spacing="10" styleClass="card-panel" fx:id="purchasePanel">
-        <Label text="Comprar tickets" styleClass="subtitle-label"/>
-        <ComboBox fx:id="ticketTypeCombo" promptText="Selecciona tipo de ticket"/>
-        <Spinner fx:id="quantitySpinner"/>
-        <Button text="Comprar" onAction="#onBuy" styleClass="primary-button"/>
+    <VBox fx:id="adminPanel" spacing="12">
+        <HBox spacing="12">
+            <VBox spacing="6" styleClass="card-panel" HBox.hgrow="ALWAYS">
+                <Label text="Monitoreo en tiempo real" styleClass="subtitle-label"/>
+                <Label fx:id="monitorStatusLabel" text="Estado sistema: -"/>
+                <Label fx:id="monitorBackendsLabel" text="Backends activos: -"/>
+                <Label fx:id="monitorErrorsLabel" text="Errores: -"/>
+                <Label fx:id="monitorLastUpdateLabel" text="Actualizacion automatica: -"/>
+            </VBox>
+        </HBox>
     </VBox>
 
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <VBox spacing="12" HBox.hgrow="ALWAYS">
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Eventos disponibles" styleClass="subtitle-label"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="openEventWizardButton" text="Nuevo evento" onAction="#onOpenEventWizard" styleClass="primary-button"/>
+            </HBox>
+
+            <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="idColumn" text="ID" prefWidth="70"/>
+                    <TableColumn fx:id="nameColumn" text="Evento" prefWidth="220"/>
+                    <TableColumn fx:id="dateColumn" text="Fecha" prefWidth="180"/>
+                    <TableColumn fx:id="capacityColumn" text="Capacidad" prefWidth="100"/>
+                </columns>
+            </TableView>
+
+            <VBox spacing="10" styleClass="card-panel" fx:id="purchasePanel">
+                <Label text="Comprar tickets" styleClass="subtitle-label"/>
+                <ComboBox fx:id="ticketTypeCombo" promptText="Selecciona tipo de ticket"/>
+                <Spinner fx:id="quantitySpinner"/>
+                <Button text="Comprar" onAction="#onBuy" styleClass="primary-button"/>
+            </VBox>
+        </VBox>
+
+        <VBox fx:id="adminUsersPanel" spacing="12" prefWidth="430">
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Usuarios e historial" styleClass="subtitle-label"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Actualizar usuarios" onAction="#onRefreshUsers" styleClass="secondary-button"/>
+            </HBox>
+
+            <VBox spacing="10" styleClass="card-panel" VBox.vgrow="ALWAYS">
+                <Label text="Usuarios registrados"/>
+                <TableView fx:id="usersTable" prefHeight="200">
+                    <columns>
+                        <TableColumn fx:id="userIdColumn" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="usernameColumn" text="Username" prefWidth="110"/>
+                        <TableColumn fx:id="userNameColumn" text="Nombre" prefWidth="160"/>
+                        <TableColumn fx:id="userRoleColumn" text="Rol" prefWidth="80"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <VBox spacing="10" styleClass="card-panel" VBox.vgrow="ALWAYS">
+                <Label fx:id="selectedUserLabel" text="Historial de compras: sin seleccion"/>
+                <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="historyTicketIdColumn" text="Ticket" prefWidth="60"/>
+                        <TableColumn fx:id="historyEventColumn" text="Evento" prefWidth="150"/>
+                        <TableColumn fx:id="historyDateColumn" text="Fecha" prefWidth="140"/>
+                        <TableColumn fx:id="historySeatTypeColumn" text="Tipo" prefWidth="90"/>
+                        <TableColumn fx:id="historySeatColumn" text="Asiento" prefWidth="90"/>
+                        <TableColumn fx:id="historyPriceColumn" text="Precio" prefWidth="80"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </VBox>
+    </HBox>
 </VBox>
