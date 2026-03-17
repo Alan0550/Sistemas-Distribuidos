@@ -7,23 +7,23 @@ import io.grpc.protobuf.services.ProtoReflectionService;
 
 import java.io.IOException;
 
+@Deprecated
 public class ProtoServer {
+    private final int port;
 
-    public ProtoServer()  {
+    public ProtoServer() {
+        this.port = Integer.parseInt(System.getenv().getOrDefault("LEGACY_PROTO_PORT", "8081"));
     }
 
     public void start() throws IOException, InterruptedException {
-        // Registramos la lógica
-        Server server = ServerBuilder.forPort(8081)
-                .addService((BindableService) new ProductoServiceImpl()) // Registramos la lógica
+        Server server = ServerBuilder.forPort(port)
+                .addService((BindableService) new ProductoServiceImpl())
                 .addService(ProtoReflectionService.newInstance())
                 .build();
-        // 2. Iniciar
-        System.out.println("Iniciando servidor gRPC en el puerto 8081...");
-        server.start();
 
-        // 3. Mantener vivo (bloquear el main para que no se cierre)
-        System.out.println("Servidor escuchando...");
+        System.out.println("[legacy] Iniciando servidor gRPC en el puerto " + port + "...");
+        server.start();
+        System.out.println("[legacy] Servidor gRPC legacy escuchando...");
         server.awaitTermination();
     }
 }

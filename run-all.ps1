@@ -6,17 +6,23 @@ Start-Process powershell -ArgumentList @(
     "-File", "`"$base\run-lb.ps1`""
 )
 
+Start-Sleep -Seconds 2
+
 Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-ExecutionPolicy", "Bypass",
     "-File", "`"$base\run-tm1.ps1`""
 )
 
+Start-Sleep -Seconds 2
+
 Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-ExecutionPolicy", "Bypass",
     "-File", "`"$base\run-tm2.ps1`""
 )
+
+Start-Sleep -Seconds 2
 
 Start-Process powershell -ArgumentList @(
     "-NoExit",

@@ -6,13 +6,15 @@ public class UsuarioEntity {
     private final String nombre;
     private final String rol;
     private final String password;
+    private final boolean baneado;
 
-    public UsuarioEntity(long id, String username, String nombre, String rol, String password) {
+    public UsuarioEntity(long id, String username, String nombre, String rol, String password, boolean baneado) {
         this.id = id;
         this.username = username;
         this.nombre = nombre;
         this.rol = rol;
         this.password = password;
+        this.baneado = baneado;
     }
 
     public long getId() {
@@ -33,5 +35,9 @@ public class UsuarioEntity {
 
     public String getPassword() {
         return password;
+    }
+
+    public boolean isBaneado() {
+        return baneado;
     }
 }

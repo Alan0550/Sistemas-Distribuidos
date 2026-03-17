@@ -1,7 +1,6 @@
 package edu.upb.tmservice;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -9,9 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 public class TicketsHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(TicketsHandler.class);
@@ -24,30 +20,36 @@ public class TicketsHandler implements HttpHandler {
         String method = he.getRequestMethod();
         String path = he.getRequestURI().toString();
         Headers h = he.getResponseHeaders();
-        h.add("Access-Control-Allow-Origin", "*");
-        h.add("Content-Type", "application/json");
-        h.add("Access-Control-Allow-Methods", "POST, OPTIONS");
-        h.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        HttpJsonSupport.addJsonHeaders(h, "POST, OPTIONS");
         log.info("Request {} {}", method, path);
 
         try {
             if ("OPTIONS".equals(method)) {
-                sendJson(he, 200, new JsonObject());
+                HttpJsonSupport.sendJson(he, 200, new JsonObject());
                 return;
             }
             if (!"POST".equals(method)) {
-                JsonObject resp = new JsonObject();
-                resp.addProperty("status", "NOK");
-                resp.addProperty("message", "Metodo no soportado");
-                sendJson(he, 405, resp);
+                HttpJsonSupport.sendJson(he, 405, HttpJsonSupport.jsonStatus("NOK", "Metodo no soportado"));
                 error = true;
                 return;
             }
 
-            JsonObject body = JsonParser.parseReader(
-                    new InputStreamReader(he.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
+            AuthSessionStore.SessionData session = AuthSupport.requireSession(he);
+            if (session == null) {
+                error = true;
+                return;
+            }
 
-            long userId = resolveUserId(he, body);
+            if (!AuthSupport.hasAnyRole(session, "CLIENTE", "FRECUENTE", "VIP")) {
+                HttpJsonSupport.sendJson(he, 403,
+                        HttpJsonSupport.jsonStatus("NOK", "Solo CLIENTE, FRECUENTE y VIP pueden comprar tickets"));
+                error = true;
+                return;
+            }
+
+            JsonObject body = HttpJsonSupport.readJsonBody(he);
+
+            long userId = session.getUserId();
             long eventId = readLong(body, "id_evento", "idEvento");
             long tipoTicketId = readLong(body, "id_tipo_ticket", "idTipoTicket");
             int cantidad = readInt(body, "cantidad");
@@ -58,10 +60,8 @@ public class TicketsHandler implements HttpHandler {
             }
 
             if (userId <= 0 || eventId <= 0 || tipoTicketId <= 0 || cantidad <= 0) {
-                JsonObject resp = new JsonObject();
-                resp.addProperty("status", "NOK");
-                resp.addProperty("message", "id_usuario, id_evento, id_tipo_ticket y cantidad son obligatorios");
-                sendJson(he, 400, resp);
+                HttpJsonSupport.sendJson(he, 400,
+                        HttpJsonSupport.jsonStatus("NOK", "id_evento, id_tipo_ticket y cantidad son obligatorios"));
                 error = true;
                 return;
             }
@@ -74,37 +74,19 @@ public class TicketsHandler implements HttpHandler {
             resp.addProperty("primer_ticket_id", result.getFirstTicketId());
             resp.addProperty("tickets_creados", result.getTicketsCreated());
             resp.addProperty("mensaje", result.getMessage());
-            sendJson(he, 201, resp);
+            HttpJsonSupport.sendJson(he, 201, resp);
         } catch (IllegalArgumentException e) {
             error = true;
-            JsonObject resp = new JsonObject();
-            resp.addProperty("status", "NOK");
-            resp.addProperty("message", e.getMessage());
-            sendJson(he, 409, resp);
+            HttpJsonSupport.sendJson(he, 409, HttpJsonSupport.jsonStatus("NOK", e.getMessage()));
         } catch (Exception e) {
             error = true;
             log.error("Error en /tickets", e);
-            JsonObject resp = new JsonObject();
-            resp.addProperty("status", "NOK");
-            resp.addProperty("message", "Error en /tickets");
-            sendJson(he, 500, resp);
+            HttpJsonSupport.sendJson(he, 500, HttpJsonSupport.jsonStatus("NOK", "Error en /tickets"));
         } finally {
             MonitorStore.getInstance().record("/tickets", start, error);
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info("Finished {} {} in {} ms (error={})", method, path, elapsedMs, error);
         }
-    }
-
-    private long resolveUserId(HttpExchange he, JsonObject body) {
-        String authHeader = he.getRequestHeaders().getFirst("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring("Bearer ".length()).trim();
-            AuthSessionStore.SessionData session = AuthSessionStore.getInstance().getSession(token);
-            if (session != null) {
-                return session.getUserId();
-            }
-        }
-        return readLong(body, "id_usuario", "idUsuario");
     }
 
     private String readString(JsonObject body, String... keys) {
@@ -132,13 +114,5 @@ public class TicketsHandler implements HttpHandler {
             }
         }
         return 0;
-    }
-
-    private void sendJson(HttpExchange he, int statusCode, JsonObject body) throws IOException {
-        byte[] out = body.toString().getBytes(StandardCharsets.UTF_8);
-        he.sendResponseHeaders(statusCode, out.length);
-        try (OutputStream os = he.getResponseBody()) {
-            os.write(out);
-        }
     }
 }

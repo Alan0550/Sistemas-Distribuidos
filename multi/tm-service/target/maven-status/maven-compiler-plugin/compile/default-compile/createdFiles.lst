@@ -23,6 +23,10 @@ edu\upb\tmservice\MonitorHandler.class
 edu\upb\tmservice\dao\TipoTicketEntity.class
 edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc$1.class
 edu\upb\tmservice\dao\UsuarioDao.class
+edu\upb\tmservice\dao\TicketReleaseItem.class
+edu\upb\tmservice\UserManagementService.class
+edu\upb\tmservice\UserManagementService$BanResult.class
+edu\upb\tmservice\AuthSupport.class
 edu\upb\tmservice\MonitorStore$1.class
 edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc$TicketPurchaseServiceFutureStub.class
 edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc$TicketPurchaseServiceStub.class
@@ -45,4 +49,6 @@ edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc$AsyncService.class
 edu\upb\tmservice\grpc\CompraTicketResponse.class
 edu\upb\tmservice\grpc\CompraTicketResponseOrBuilder.class
 edu\upb\tmservice\grpc\TicketPurchase.class
+edu\upb\tmservice\HttpJsonSupport.class
 edu\upb\tmservice\TicketsHandler.class
+edu\upb\tmservice\EventManagementService.class

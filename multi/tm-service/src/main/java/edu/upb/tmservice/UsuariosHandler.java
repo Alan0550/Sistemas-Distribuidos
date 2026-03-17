@@ -2,7 +2,6 @@ package edu.upb.tmservice;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -15,10 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLException;
 import java.util.List;
@@ -27,6 +22,7 @@ public class UsuariosHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(UsuariosHandler.class);
     private final UsuarioDao usuarioDao = new UsuarioDao();
     private final TicketDao ticketDao = new TicketDao();
+    private final UserManagementService userManagementService = new UserManagementService();
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -35,29 +31,24 @@ public class UsuariosHandler implements HttpHandler {
         String method = he.getRequestMethod();
         String path = he.getRequestURI().toString();
         Headers h = he.getResponseHeaders();
-        h.add("Access-Control-Allow-Origin", "*");
-        h.add("Content-Type", "application/json");
+        HttpJsonSupport.addJsonHeaders(h, "GET, POST, PATCH, OPTIONS");
         log.info("Request {} {}", method, path);
 
         try {
             if ("OPTIONS".equals(method)) {
-                byte[] out = "{}".getBytes(StandardCharsets.UTF_8);
-                he.sendResponseHeaders(200, out.length);
-                try (OutputStream os = he.getResponseBody()) {
-                    os.write(out);
-                }
+                HttpJsonSupport.sendJsonText(he, 200, "{}");
                 return;
             }
 
+            String requestPath = he.getRequestURI().getPath();
             if ("GET".equals(method)) {
-                boolean includeHistory = "true".equalsIgnoreCase(getQueryParam(he, "include_history"));
+                boolean includeHistory = "true".equalsIgnoreCase(HttpJsonSupport.getQueryParam(he, "include_history"));
                 if (includeHistory) {
-                    AuthSessionStore.SessionData session = requireSession(he);
+                    AuthSessionStore.SessionData session = AuthSupport.requireSession(he);
                     if (session == null) {
                         return;
                     }
-                    if (!"ADMIN".equalsIgnoreCase(session.getRol())) {
-                        sendSimpleJson(he, 403, "{\"status\":\"NOK\",\"message\":\"Acceso denegado para este rol\"}");
+                    if (!AuthSupport.requireRole(he, session, "ADMIN")) {
                         return;
                     }
                     JsonObject response = new JsonObject();
@@ -69,35 +60,30 @@ public class UsuariosHandler implements HttpHandler {
                         usersArr.add(user);
                     }
                     response.add("users", usersArr);
-                    byte[] out = response.toString().getBytes(StandardCharsets.UTF_8);
-                    he.sendResponseHeaders(200, out.length);
-                    try (OutputStream os = he.getResponseBody()) {
-                        os.write(out);
-                    }
+                    HttpJsonSupport.sendJson(he, 200, response);
                     return;
                 }
 
-                String usernameFilter = getQueryParam(he, "username");
+                String usernameFilter = HttpJsonSupport.getQueryParam(he, "username");
                 if (usernameFilter != null && !usernameFilter.isEmpty()) {
                     UsuarioEntity entity = usuarioDao.findPublicByUsername(usernameFilter);
                     JsonObject user = toJsonUser(entity);
 
                     if (user == null) {
                         error = true;
-                        byte[] out = "{\"status\":\"NOK\",\"message\":\"Usuario no encontrado\"}"
-                                .getBytes(StandardCharsets.UTF_8);
-                        he.sendResponseHeaders(404, out.length);
-                        try (OutputStream os = he.getResponseBody()) {
-                            os.write(out);
-                        }
+                        HttpJsonSupport.sendJson(he, 404, HttpJsonSupport.jsonStatus("NOK", "Usuario no encontrado"));
                         return;
                     }
 
-                    byte[] out = user.toString().getBytes(StandardCharsets.UTF_8);
-                    he.sendResponseHeaders(200, out.length);
-                    try (OutputStream os = he.getResponseBody()) {
-                        os.write(out);
-                    }
+                    HttpJsonSupport.sendJson(he, 200, user);
+                    return;
+                }
+
+                AuthSessionStore.SessionData session = AuthSupport.requireSession(he);
+                if (session == null) {
+                    return;
+                }
+                if (!AuthSupport.requireRole(he, session, "ADMIN")) {
                     return;
                 }
 
@@ -106,17 +92,12 @@ public class UsuariosHandler implements HttpHandler {
                 for (UsuarioEntity entity : users) {
                     arr.add(toJsonUser(entity));
                 }
-                byte[] out = arr.toString().getBytes(StandardCharsets.UTF_8);
-                he.sendResponseHeaders(200, out.length);
-                try (OutputStream os = he.getResponseBody()) {
-                    os.write(out);
-                }
+                HttpJsonSupport.sendJsonText(he, 200, arr.toString());
                 return;
             }
 
             if ("POST".equals(method)) {
-                JsonObject body = JsonParser.parseReader(
-                        new InputStreamReader(he.getRequestBody(), StandardCharsets.UTF_8)).getAsJsonObject();
+                JsonObject body = HttpJsonSupport.readJsonBody(he);
 
                 String username = body.has("username") ? body.get("username").getAsString().trim() : "";
                 String nombre = body.has("nombre") ? body.get("nombre").getAsString() : "";
@@ -125,11 +106,7 @@ public class UsuariosHandler implements HttpHandler {
 
                 if (username.isEmpty() || nombre.isEmpty() || password.isEmpty()) {
                     error = true;
-                    byte[] out = "{\"status\":\"NOK\",\"message\":\"Faltan datos\"}".getBytes(StandardCharsets.UTF_8);
-                    he.sendResponseHeaders(400, out.length);
-                    try (OutputStream os = he.getResponseBody()) {
-                        os.write(out);
-                    }
+                    HttpJsonSupport.sendJson(he, 400, HttpJsonSupport.jsonStatus("NOK", "Faltan datos"));
                     return;
                 }
 
@@ -141,46 +118,37 @@ public class UsuariosHandler implements HttpHandler {
                     resp.addProperty("username", username);
                     resp.addProperty("nombre", nombre);
                     resp.addProperty("rol", rol);
-                    byte[] out = resp.toString().getBytes(StandardCharsets.UTF_8);
-                    he.sendResponseHeaders(201, out.length);
-                    try (OutputStream os = he.getResponseBody()) {
-                        os.write(out);
-                    }
+                    HttpJsonSupport.sendJson(he, 201, resp);
                     return;
                 } catch (SQLIntegrityConstraintViolationException e) {
                     error = true;
-                    byte[] out = "{\"status\":\"NOK\",\"message\":\"Username ya existe\"}"
-                            .getBytes(StandardCharsets.UTF_8);
-                    he.sendResponseHeaders(409, out.length);
-                    try (OutputStream os = he.getResponseBody()) {
-                        os.write(out);
-                    }
+                    HttpJsonSupport.sendJson(he, 409, HttpJsonSupport.jsonStatus("NOK", "Username ya existe"));
                     return;
                 }
             }
 
-            error = true;
-            byte[] out = "{\"status\":\"NOK\",\"message\":\"Metodo no soportado\"}".getBytes(StandardCharsets.UTF_8);
-            he.sendResponseHeaders(405, out.length);
-            try (OutputStream os = he.getResponseBody()) {
-                os.write(out);
+            if ("PATCH".equals(method) && requestPath.matches("^/usuarios/\\d+/(ban|unban)$")) {
+                AuthSessionStore.SessionData session = AuthSupport.requireSession(he);
+                if (session == null) {
+                    return;
+                }
+                if (!AuthSupport.requireRole(he, session, "ADMIN")) {
+                    return;
+                }
+                handleBanUpdate(he, requestPath);
+                return;
             }
+
+            error = true;
+            HttpJsonSupport.sendJson(he, 405, HttpJsonSupport.jsonStatus("NOK", "Metodo no soportado"));
         } catch (SQLException e) {
             error = true;
             log.error("Database error in /usuarios", e);
-            byte[] out = "{\"status\":\"NOK\",\"message\":\"Error de base de datos\"}".getBytes(StandardCharsets.UTF_8);
-            he.sendResponseHeaders(500, out.length);
-            try (OutputStream os = he.getResponseBody()) {
-                os.write(out);
-            }
+            HttpJsonSupport.sendJson(he, 500, HttpJsonSupport.jsonStatus("NOK", "Error de base de datos"));
         } catch (Exception e) {
             error = true;
             log.error("Error in /usuarios", e);
-            byte[] out = "{\"status\":\"NOK\",\"message\":\"Error en /usuarios\"}".getBytes(StandardCharsets.UTF_8);
-            he.sendResponseHeaders(500, out.length);
-            try (OutputStream os = he.getResponseBody()) {
-                os.write(out);
-            }
+            HttpJsonSupport.sendJson(he, 500, HttpJsonSupport.jsonStatus("NOK", "Error en /usuarios"));
         } finally {
             MonitorStore.getInstance().record("/usuarios", start, error);
             long elapsedMs = (System.nanoTime() - start) / 1_000_000;
@@ -197,6 +165,7 @@ public class UsuariosHandler implements HttpHandler {
         user.addProperty("username", entity.getUsername());
         user.addProperty("nombre", entity.getNombre());
         user.addProperty("rol", entity.getRol());
+        user.addProperty("baneado", entity.isBaneado());
         return user;
     }
 
@@ -216,42 +185,23 @@ public class UsuariosHandler implements HttpHandler {
         return arr;
     }
 
-    private String getQueryParam(HttpExchange he, String key) {
-        String raw = he.getRequestURI().getRawQuery();
-        if (raw == null || raw.isEmpty()) {
-            return null;
-        }
-        String[] parts = raw.split("&");
-        for (String part : parts) {
-            String[] kv = part.split("=", 2);
-            if (kv.length == 2 && key.equals(kv[0])) {
-                return URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
-            }
-        }
-        return null;
-    }
+    private void handleBanUpdate(HttpExchange he, String requestPath) throws Exception {
+        String[] parts = requestPath.split("/");
+        long userId = Long.parseLong(parts[2]);
+        boolean ban = "ban".equalsIgnoreCase(parts[3]);
 
-    private AuthSessionStore.SessionData requireSession(HttpExchange he) throws IOException {
-        String authHeader = he.getRequestHeaders().getFirst("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendSimpleJson(he, 401, "{\"status\":\"NOK\",\"message\":\"No autorizado\"}");
-            return null;
-        }
+        UserManagementService.BanResult result = ban
+                ? userManagementService.banUser(userId)
+                : userManagementService.unbanUser(userId);
 
-        String token = authHeader.substring("Bearer ".length()).trim();
-        AuthSessionStore.SessionData session = AuthSessionStore.getInstance().getSession(token);
-        if (session == null) {
-            sendSimpleJson(he, 401, "{\"status\":\"NOK\",\"message\":\"Sesion invalida o expirada\"}");
-            return null;
-        }
-        return session;
-    }
-
-    private void sendSimpleJson(HttpExchange he, int statusCode, String bodyText) throws IOException {
-        byte[] out = bodyText.getBytes(StandardCharsets.UTF_8);
-        he.sendResponseHeaders(statusCode, out.length);
-        try (OutputStream os = he.getResponseBody()) {
-            os.write(out);
-        }
+        JsonObject resp = new JsonObject();
+        resp.addProperty("status", "OK");
+        resp.addProperty("username", result.getUsername());
+        resp.addProperty("baneado", result.isBanned());
+        resp.addProperty("tickets_liberados", result.getReleasedTickets());
+        resp.addProperty("message", ban
+                ? "Usuario baneado correctamente"
+                : "Ban retirado correctamente");
+        HttpJsonSupport.sendJson(he, 200, resp);
     }
 }

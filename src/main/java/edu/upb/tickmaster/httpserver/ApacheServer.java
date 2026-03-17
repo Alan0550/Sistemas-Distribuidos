@@ -12,19 +12,23 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 /**
+ * Legacy HTTP compatibility gateway. The active distributed stack lives under multi/.
  *
  * @author rlaredo
  */
+@Deprecated
 public class ApacheServer {
     private HttpServer server = null;
     private boolean isServerDone = false;
+    private final int port;
 
     public ApacheServer(){
+        this.port = Integer.parseInt(System.getenv().getOrDefault("LEGACY_HTTP_PORT", "1914"));
     }
     
     public boolean start() {
         try {
-            this.server = HttpServer.create(new InetSocketAddress(1914), 0);
+            this.server = HttpServer.create(new InetSocketAddress(port), 0);
             this.server.createContext("/", exchange -> {
                 Headers headers = exchange.getResponseHeaders();
                 headers.add("Access-Control-Allow-Origin", "*");
@@ -40,10 +44,12 @@ public class ApacheServer {
             this.server.createContext("/estado", new EstadoHandler());
             this.server.setExecutor(Executors.newFixedThreadPool(2));
             this.server.start();
+            System.out.println("[legacy] HTTP compatibility gateway listening on port " + port);
         
         return true;
         } catch (IOException e) {
             this.server = null;
+            System.out.println("[legacy] Could not start HTTP compatibility gateway: " + e.getMessage());
             //System.exit(-1);
         }
         return false;

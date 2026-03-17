@@ -14,7 +14,7 @@ public class UsuarioDao {
     public UsuarioEntity findPublicByUsername(String username) throws SQLException {
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
                 PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id, username, nombre, rol FROM usuarios WHERE username = ? LIMIT 1")) {
+                        "SELECT id, username, nombre, rol, baneado FROM usuarios WHERE username = ? LIMIT 1")) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -23,7 +23,8 @@ public class UsuarioDao {
                             rs.getString("username"),
                             rs.getString("nombre"),
                             rs.getString("rol"),
-                            null);
+                            null,
+                            rs.getBoolean("baneado"));
                 }
             }
         }
@@ -33,7 +34,7 @@ public class UsuarioDao {
     public UsuarioEntity findAuthByUsername(String username) throws SQLException {
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
                 PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id, username, nombre, rol, password FROM usuarios WHERE username = ? LIMIT 1")) {
+                        "SELECT id, username, nombre, rol, password, baneado FROM usuarios WHERE username = ? LIMIT 1")) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -42,7 +43,8 @@ public class UsuarioDao {
                             rs.getString("username"),
                             rs.getString("nombre"),
                             rs.getString("rol"),
-                            rs.getString("password"));
+                            rs.getString("password"),
+                            rs.getBoolean("baneado"));
                 }
             }
         }
@@ -53,7 +55,7 @@ public class UsuarioDao {
         List<UsuarioEntity> users = new ArrayList<UsuarioEntity>();
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
                 PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id, username, nombre, rol FROM usuarios ORDER BY id");
+                        "SELECT id, username, nombre, rol, baneado FROM usuarios ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 users.add(new UsuarioEntity(
@@ -61,10 +63,30 @@ public class UsuarioDao {
                         rs.getString("username"),
                         rs.getString("nombre"),
                         rs.getString("rol"),
-                        null));
+                        null,
+                        rs.getBoolean("baneado")));
             }
         }
         return users;
+    }
+
+    public UsuarioEntity findById(Connection conn, long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, username, nombre, rol, password, baneado FROM usuarios WHERE id = ? LIMIT 1")) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new UsuarioEntity(
+                            rs.getLong("id"),
+                            rs.getString("username"),
+                            rs.getString("nombre"),
+                            rs.getString("rol"),
+                            rs.getString("password"),
+                            rs.getBoolean("baneado"));
+                }
+            }
+        }
+        return null;
     }
 
     public long createUser(String username, String nombre, String passwordHash, String rol) throws SQLException {
@@ -117,5 +139,23 @@ public class UsuarioDao {
             }
         }
         return null;
+    }
+
+    public void updateRole(Connection conn, long userId, String rol) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE usuarios SET rol = ? WHERE id = ?")) {
+            ps.setString(1, rol);
+            ps.setLong(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateBaneado(Connection conn, long userId, boolean baneado) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE usuarios SET baneado = ? WHERE id = ?")) {
+            ps.setBoolean(1, baneado);
+            ps.setLong(2, userId);
+            ps.executeUpdate();
+        }
     }
 }

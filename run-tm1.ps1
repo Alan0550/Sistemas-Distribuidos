@@ -1,6 +1,6 @@
 cd "C:\Program Files\ticket_master-master"
-$env:TM_SERVICE_PORT="9101"
-$env:TM_GRPC_PORT="9201"
+$env:TM_SERVICE_PORT="9301"
+$env:TM_GRPC_PORT="9401"
 $env:TM_SERVICE_HOST="localhost"
 $env:LB_REGISTER_URL="http://localhost:1915/register"
 $env:TM_DB_URL="jdbc:mysql://localhost:3306/sis_distribuidos"

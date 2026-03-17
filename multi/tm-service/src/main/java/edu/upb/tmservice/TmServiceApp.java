@@ -15,6 +15,10 @@ import java.util.concurrent.Executors;
 
 public class TmServiceApp {
     private static final Logger log = LoggerFactory.getLogger(TmServiceApp.class);
+    private static final int REGISTER_ATTEMPTS = Integer
+            .parseInt(System.getenv().getOrDefault("LB_REGISTER_ATTEMPTS", "5"));
+    private static final long REGISTER_RETRY_DELAY_MS = Long
+            .parseLong(System.getenv().getOrDefault("LB_REGISTER_RETRY_DELAY_MS", "2000"));
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("TM_SERVICE_PORT", "9101"));
@@ -42,32 +46,44 @@ public class TmServiceApp {
         String scheme = System.getenv().getOrDefault("TM_SERVICE_SCHEME", "http");
         String host = System.getenv().getOrDefault("TM_SERVICE_HOST", "localhost");
 
-        try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(registerUrl).openConnection();
-            conn.setRequestMethod("POST");
-            conn.setConnectTimeout(2000);
-            conn.setReadTimeout(2000);
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/json");
+        JsonObject body = new JsonObject();
+        body.addProperty("url", scheme + "://" + host + ":" + port + "/");
+        body.addProperty("ip", host);
+        body.addProperty("port", port);
+        byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
 
-            JsonObject body = new JsonObject();
-            body.addProperty("url", scheme + "://" + host + ":" + port + "/");
-            body.addProperty("ip", host);
-            body.addProperty("port", port);
-            byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
+        for (int attempt = 1; attempt <= REGISTER_ATTEMPTS; attempt++) {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(registerUrl).openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(2000);
+                conn.setReadTimeout(2000);
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json");
 
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(payload);
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload);
+                }
+
+                int code = conn.getResponseCode();
+                if (code >= 200 && code < 300) {
+                    log.info("Backend registered in load-balancer: {}:{} (attempt={})", host, port, attempt);
+                    return;
+                }
+                log.warn("Could not register backend (status={}, attempt={}): {}:{}", code, attempt, host, port);
+            } catch (Exception e) {
+                log.warn("Could not register backend in load-balancer (attempt={}): {}:{} ({})",
+                        attempt, host, port, e.getClass().getSimpleName());
             }
 
-            int code = conn.getResponseCode();
-            if (code >= 200 && code < 300) {
-                log.info("Backend registered in load-balancer: {}:{}", host, port);
-            } else {
-                log.warn("Could not register backend (status={}): {}:{}", code, host, port);
+            try {
+                Thread.sleep(REGISTER_RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
-        } catch (Exception e) {
-            log.warn("Could not register backend in load-balancer: {}:{}", host, port);
         }
+
+        log.warn("Backend was not registered after {} attempts: {}:{}", REGISTER_ATTEMPTS, host, port);
     }
 }

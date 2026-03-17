@@ -1,18 +1,24 @@
 package edu.upb.desktop.model;
 
-public class UserTicketHistoryModel {
+import java.math.BigDecimal;
+
+public class AdminTicketSaleModel {
     private final long ticketId;
     private final long eventId;
+    private final String username;
+    private final String fullName;
     private final String eventName;
     private final String eventDate;
     private final String seatType;
     private final String seatNumber;
-    private final String price;
+    private final BigDecimal price;
 
-    public UserTicketHistoryModel(long ticketId, long eventId, String eventName, String eventDate, String seatType,
-            String seatNumber, String price) {
+    public AdminTicketSaleModel(long ticketId, long eventId, String username, String fullName, String eventName,
+            String eventDate, String seatType, String seatNumber, BigDecimal price) {
         this.ticketId = ticketId;
         this.eventId = eventId;
+        this.username = username;
+        this.fullName = fullName;
         this.eventName = eventName;
         this.eventDate = eventDate;
         this.seatType = seatType;
@@ -26,6 +32,14 @@ public class UserTicketHistoryModel {
 
     public long getEventId() {
         return eventId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getFullName() {
+        return fullName;
     }
 
     public String getEventName() {
@@ -44,7 +58,7 @@ public class UserTicketHistoryModel {
         return seatNumber;
     }
 
-    public String getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 }

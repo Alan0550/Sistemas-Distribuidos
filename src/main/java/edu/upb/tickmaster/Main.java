@@ -7,10 +7,24 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ApacheServer apacheServer = new ApacheServer();
-        apacheServer.start();
+        boolean httpEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("LEGACY_HTTP_ENABLED", "true"));
+        boolean grpcEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("LEGACY_PROTO_ENABLED", "true"));
 
-        ProtoServer protoServer = new ProtoServer();
-        protoServer.start();
+        System.out.println("[legacy] Root Tickmaster stack started in compatibility mode.");
+        System.out.println("[legacy] The active distributed architecture lives under multi/.");
+
+        if (httpEnabled) {
+            ApacheServer apacheServer = new ApacheServer();
+            apacheServer.start();
+        } else {
+            System.out.println("[legacy] HTTP compatibility gateway disabled by LEGACY_HTTP_ENABLED=false");
+        }
+
+        if (grpcEnabled) {
+            ProtoServer protoServer = new ProtoServer();
+            protoServer.start();
+        } else {
+            System.out.println("[legacy] Legacy gRPC server disabled by LEGACY_PROTO_ENABLED=false");
+        }
     }
 }

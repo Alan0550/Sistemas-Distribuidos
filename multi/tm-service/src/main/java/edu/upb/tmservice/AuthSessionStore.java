@@ -8,16 +8,23 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthSessionStore {
+    private static final Logger log = LoggerFactory.getLogger(AuthSessionStore.class);
     private static final AuthSessionStore INSTANCE = new AuthSessionStore();
-    private static final long SESSION_TTL_MS = 12L * 60L * 60L * 1000L;
     private final String signingSecret;
+    private final long sessionTtlMs;
     private final Base64.Encoder urlEncoder = Base64.getUrlEncoder().withoutPadding();
     private final Base64.Decoder urlDecoder = Base64.getUrlDecoder();
 
     private AuthSessionStore() {
         this.signingSecret = System.getenv().getOrDefault("TM_SESSION_SECRET", "tm-session-dev-secret");
+        this.sessionTtlMs = Long.parseLong(System.getenv().getOrDefault("TM_SESSION_TTL_MS", String.valueOf(12L * 60L * 60L * 1000L)));
+        if ("tm-session-dev-secret".equals(this.signingSecret)) {
+            log.warn("TM_SESSION_SECRET is using the default development value");
+        }
     }
 
     public static AuthSessionStore getInstance() {
@@ -25,7 +32,7 @@ public class AuthSessionStore {
     }
 
     public String createSession(long userId, String username, String rol) {
-        long expiresAt = System.currentTimeMillis() + SESSION_TTL_MS;
+        long expiresAt = System.currentTimeMillis() + sessionTtlMs;
         JsonObject payload = new JsonObject();
         payload.addProperty("uid", userId);
         payload.addProperty("usr", username);

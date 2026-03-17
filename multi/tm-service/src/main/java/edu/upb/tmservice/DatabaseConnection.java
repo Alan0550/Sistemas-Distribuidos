@@ -4,19 +4,29 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabaseConnection {
+    private static final Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
     private static DatabaseConnection instance;
     private final String url;
     private final String user;
     private final String password;
+    private final boolean autoInitSchema;
 
     private DatabaseConnection() {
         this.url = System.getenv().getOrDefault("TM_DB_URL", "jdbc:mysql://localhost:3306/sis_distribuidos");
         this.user = System.getenv().getOrDefault("TM_DB_USER", "root");
         this.password = System.getenv().getOrDefault("TM_DB_PASS", "12345689");
+        this.autoInitSchema = Boolean.parseBoolean(System.getenv().getOrDefault("TM_DB_AUTO_INIT", "true"));
+        warnOnDefaultConfig();
         loadJdbcDriver();
-        ensureSchema();
+        if (autoInitSchema) {
+            ensureSchema();
+        } else {
+            log.info("TM_DB_AUTO_INIT=false, schema bootstrap skipped");
+        }
     }
 
     public static synchronized DatabaseConnection getInstance() {
@@ -70,14 +80,24 @@ public class DatabaseConnection {
             st.execute(eventosSql);
             st.execute(tiposSql);
             st.execute(ticketsSql);
-        } catch (SQLException ignored) {
+        } catch (SQLException e) {
+            log.error("Could not initialize database schema", e);
+            throw new IllegalStateException("Could not initialize database schema", e);
         }
     }
 
     private void loadJdbcDriver() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException ignored) {
+        } catch (ClassNotFoundException e) {
+            log.error("MySQL JDBC driver not found", e);
+            throw new IllegalStateException("MySQL JDBC driver not found", e);
+        }
+    }
+
+    private void warnOnDefaultConfig() {
+        if ("12345689".equals(password)) {
+            log.warn("TM_DB_PASS is using the default development value");
         }
     }
 }

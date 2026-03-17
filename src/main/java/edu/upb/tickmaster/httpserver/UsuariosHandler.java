@@ -24,6 +24,7 @@ import com.google.gson.JsonParser;
 /**
  * @author rlaredo
  */
+@Deprecated
 public class UsuariosHandler implements HttpHandler {
 
 

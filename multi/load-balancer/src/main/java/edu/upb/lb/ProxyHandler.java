@@ -11,6 +11,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -162,6 +163,7 @@ public class ProxyHandler implements HttpHandler {
         }
         String query = he.getRequestURI().getRawQuery();
         String monitorRoute = stripTmPrefix ? "/tm" : path;
+        boolean userRegistrationRequest = "POST".equals(method) && "/usuarios".equals(path);
 
         if (backend == null) {
             error = true;
@@ -176,7 +178,7 @@ public class ProxyHandler implements HttpHandler {
 
         String target = backend + path + (query != null ? "?" + query : "");
         byte[] requestBody = readBodyIfNeeded(he, method);
-        String requestUsername = "POST".equals(method) ? extractUsername(requestBody) : null;
+        String requestUsername = userRegistrationRequest ? extractUsername(requestBody) : null;
         log.info("Request {} {} routed to {}", method, requestPath, target);
 
         RequestConfig config = RequestConfig.custom()
@@ -196,7 +198,7 @@ public class ProxyHandler implements HttpHandler {
             } catch (Exception firstError) {
                 String firstErrorType = classifyErrorType(firstError);
 
-                if ("POST".equals(method) && "READ".equals(firstErrorType)) {
+                if (userRegistrationRequest && "READ".equals(firstErrorType)) {
                     registryRuntimeFailure(backend, firstErrorType);
                     log.warn("Read timeout for {}. Checking if first attempt was saved.", requestPath);
 
@@ -258,6 +260,11 @@ public class ProxyHandler implements HttpHandler {
                 put.setEntity(new ByteArrayEntity(requestBody));
                 req = put;
                 break;
+            case "PATCH":
+                HttpPatch patch = new HttpPatch(target);
+                patch.setEntity(new ByteArrayEntity(requestBody));
+                req = patch;
+                break;
             case "DELETE":
                 req = new HttpDelete(target);
                 break;
@@ -281,7 +288,7 @@ public class ProxyHandler implements HttpHandler {
     }
 
     private byte[] readBodyIfNeeded(HttpExchange he, String method) throws IOException {
-        if (!"POST".equals(method) && !"PUT".equals(method)) {
+        if (!"POST".equals(method) && !"PUT".equals(method) && !"PATCH".equals(method)) {
             return new byte[0];
         }
         try (InputStream is = he.getRequestBody();
@@ -372,7 +379,7 @@ public class ProxyHandler implements HttpHandler {
     private void addBaseHeaders(Headers headers) {
         headers.add("Access-Control-Allow-Origin", "*");
         headers.add("Content-Type", "application/json");
-        headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
         headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
 

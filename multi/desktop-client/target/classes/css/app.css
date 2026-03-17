@@ -42,3 +42,71 @@
     -fx-border-color: #d5dfec;
     -fx-border-radius: 12;
 }
+
+.nav-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 14;
+    -fx-border-color: #d5dfec;
+    -fx-border-radius: 14;
+    -fx-padding: 16;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1c355e;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 10;
+}
+
+.nav-button-active {
+    -fx-background-color: #e1ecff;
+    -fx-text-fill: #113866;
+}
+
+.metric-card {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 12;
+    -fx-border-color: #d5dfec;
+    -fx-border-radius: 12;
+    -fx-padding: 14;
+}
+
+.metric-value {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1c355e;
+}
+
+.muted-label {
+    -fx-text-fill: #607089;
+}
+
+.text-input {
+    -fx-prompt-text-fill: #7e8da6;
+}
+
+.text-input:focused {
+    -fx-prompt-text-fill: #7e8da6;
+}
+
+.password-field {
+    -fx-prompt-text-fill: #7e8da6;
+}
+
+.password-field:focused {
+    -fx-prompt-text-fill: #7e8da6;
+}
+
+.spinner {
+    -fx-pref-height: 36;
+}
+
+.spinner .text-field {
+    -fx-prompt-text-fill: #7e8da6;
+}
+
+.spinner .text-field:focused {
+    -fx-prompt-text-fill: #7e8da6;
+}

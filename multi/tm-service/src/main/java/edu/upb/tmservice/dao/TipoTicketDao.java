@@ -109,4 +109,13 @@ public class TipoTicketDao {
             ps.executeUpdate();
         }
     }
+
+    public void increaseAvailable(Connection conn, long tipoTicketId, int cantidad) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE tipo_ticket SET cantidad = cantidad + ? WHERE id = ?")) {
+            ps.setInt(1, cantidad);
+            ps.setLong(2, tipoTicketId);
+            ps.executeUpdate();
+        }
+    }
 }

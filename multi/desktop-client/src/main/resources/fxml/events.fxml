@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
@@ -16,7 +17,7 @@
       fx:controller="edu.upb.desktop.controller.EventsController"
       spacing="16" styleClass="screen-root">
     <padding>
-        <Insets top="24" right="24" bottom="24" left="24"/>
+        <Insets top="22" right="22" bottom="22" left="22"/>
     </padding>
 
     <HBox spacing="12" alignment="CENTER_LEFT">
@@ -25,75 +26,195 @@
         <Button text="Cerrar sesion" onAction="#onLogout" styleClass="secondary-button"/>
     </HBox>
 
-    <VBox fx:id="adminPanel" spacing="12">
-        <HBox spacing="12">
-            <VBox spacing="6" styleClass="card-panel" HBox.hgrow="ALWAYS">
-                <Label text="Monitoreo en tiempo real" styleClass="subtitle-label"/>
-                <Label fx:id="monitorStatusLabel" text="Estado sistema: -"/>
-                <Label fx:id="monitorBackendsLabel" text="Backends activos: -"/>
-                <Label fx:id="monitorErrorsLabel" text="Errores: -"/>
-                <Label fx:id="monitorLastUpdateLabel" text="Actualizacion automatica: -"/>
-            </VBox>
-        </HBox>
-    </VBox>
+    <HBox fx:id="adminShell" spacing="18" VBox.vgrow="ALWAYS">
+        <VBox spacing="10" prefWidth="220" styleClass="nav-panel">
+            <Label text="Panel Admin" styleClass="subtitle-label"/>
+            <Button fx:id="dashboardNavButton" text="Monitoreo" onAction="#onShowDashboard" maxWidth="Infinity" styleClass="nav-button"/>
+            <Button fx:id="eventsNavButton" text="Eventos" onAction="#onShowAdminEvents" maxWidth="Infinity" styleClass="nav-button"/>
+            <Button fx:id="usersNavButton" text="Usuarios" onAction="#onShowUsers" maxWidth="Infinity" styleClass="nav-button"/>
+            <Button fx:id="salesNavButton" text="Ventas" onAction="#onShowSales" maxWidth="Infinity" styleClass="nav-button"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Label text="El admin no usa el flujo de compra." styleClass="muted-label" wrapText="true"/>
+        </VBox>
 
-    <HBox spacing="16" VBox.vgrow="ALWAYS">
-        <VBox spacing="12" HBox.hgrow="ALWAYS">
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Eventos disponibles" styleClass="subtitle-label"/>
+        <VBox fx:id="dashboardPane" spacing="14" HBox.hgrow="ALWAYS">
+            <Label text="Monitoreo operativo" styleClass="subtitle-label"/>
+            <HBox spacing="12">
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Estado general" styleClass="muted-label"/>
+                    <Label fx:id="monitorStatusLabel" text="Estado sistema: -" styleClass="metric-value"/>
+                </VBox>
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Backends" styleClass="muted-label"/>
+                    <Label fx:id="monitorBackendsLabel" text="Backends en balanceo: -" styleClass="metric-value"/>
+                </VBox>
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Errores" styleClass="muted-label"/>
+                    <Label fx:id="monitorErrorsLabel" text="Errores acumulados: -" styleClass="metric-value"/>
+                </VBox>
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Latencia" styleClass="muted-label"/>
+                    <Label fx:id="monitorLatencyLabel" text="Latencia promedio: -" styleClass="metric-value"/>
+                </VBox>
+            </HBox>
+
+            <Label fx:id="monitorLastUpdateLabel" text="Actualizacion automatica: -" styleClass="muted-label"/>
+
+            <TableView fx:id="backendTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="backendUrlColumn" text="Backend" prefWidth="220"/>
+                    <TableColumn fx:id="backendStatusColumn" text="Estado" prefWidth="80"/>
+                    <TableColumn fx:id="backendBalancingColumn" text="En balanceo" prefWidth="95"/>
+                    <TableColumn fx:id="backendVerificationColumn" text="En verificacion" prefWidth="105"/>
+                    <TableColumn fx:id="backendFailCountColumn" text="Fail count" prefWidth="85"/>
+                    <TableColumn fx:id="backendDatabaseColumn" text="DB" prefWidth="70"/>
+                    <TableColumn fx:id="backendDiskColumn" text="Disco" prefWidth="110"/>
+                    <TableColumn fx:id="backendLastCheckColumn" text="Ultimo check" prefWidth="110"/>
+                    <TableColumn fx:id="backendLastErrorColumn" text="Ultimo error" prefWidth="240"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <VBox fx:id="adminEventsPane" spacing="14" HBox.hgrow="ALWAYS" visible="false" managed="false">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Gestion de eventos" styleClass="subtitle-label"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="adminEventFilterField" promptText="Buscar evento por nombre" prefWidth="220"/>
                 <Button fx:id="openEventWizardButton" text="Nuevo evento" onAction="#onOpenEventWizard" styleClass="primary-button"/>
             </HBox>
 
-            <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS">
+            <Label fx:id="adminEventsSummaryLabel" text="Selecciona un evento para ver su disponibilidad" styleClass="muted-label"/>
+
+            <TableView fx:id="adminEventsTable" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="idColumn" text="ID" prefWidth="70"/>
-                    <TableColumn fx:id="nameColumn" text="Evento" prefWidth="220"/>
-                    <TableColumn fx:id="dateColumn" text="Fecha" prefWidth="180"/>
-                    <TableColumn fx:id="capacityColumn" text="Capacidad" prefWidth="100"/>
+                    <TableColumn fx:id="adminEventIdColumn" text="ID" prefWidth="70"/>
+                    <TableColumn fx:id="adminEventNameColumn" text="Evento" prefWidth="250"/>
+                    <TableColumn fx:id="adminEventDateColumn" text="Fecha" prefWidth="180"/>
+                    <TableColumn fx:id="adminEventCapacityColumn" text="Capacidad" prefWidth="90"/>
+                    <TableColumn fx:id="adminEventAvailableColumn" text="Disponibles" prefWidth="95"/>
+                    <TableColumn fx:id="adminEventSoldColumn" text="Vendidos" prefWidth="90"/>
                 </columns>
             </TableView>
-
-            <VBox spacing="10" styleClass="card-panel" fx:id="purchasePanel">
-                <Label text="Comprar tickets" styleClass="subtitle-label"/>
-                <ComboBox fx:id="ticketTypeCombo" promptText="Selecciona tipo de ticket"/>
-                <Spinner fx:id="quantitySpinner"/>
-                <Button text="Comprar" onAction="#onBuy" styleClass="primary-button"/>
-            </VBox>
         </VBox>
 
-        <VBox fx:id="adminUsersPanel" spacing="12" prefWidth="430">
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Usuarios e historial" styleClass="subtitle-label"/>
+        <VBox fx:id="usersListPane" spacing="14" HBox.hgrow="ALWAYS" visible="false" managed="false">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Usuarios registrados" styleClass="subtitle-label"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button text="Actualizar usuarios" onAction="#onRefreshUsers" styleClass="secondary-button"/>
+                <TextField fx:id="userSearchField" promptText="Buscar por username o nombre" prefWidth="260"/>
+                <Button text="Actualizar" onAction="#onRefreshUsers" styleClass="secondary-button"/>
             </HBox>
 
-            <VBox spacing="10" styleClass="card-panel" VBox.vgrow="ALWAYS">
-                <Label text="Usuarios registrados"/>
-                <TableView fx:id="usersTable" prefHeight="200">
-                    <columns>
-                        <TableColumn fx:id="userIdColumn" text="ID" prefWidth="50"/>
-                        <TableColumn fx:id="usernameColumn" text="Username" prefWidth="110"/>
-                        <TableColumn fx:id="userNameColumn" text="Nombre" prefWidth="160"/>
-                        <TableColumn fx:id="userRoleColumn" text="Rol" prefWidth="80"/>
-                    </columns>
-                </TableView>
-            </VBox>
+            <Label fx:id="usersListSummaryLabel" text="Usuarios visibles: 0 / 0" styleClass="muted-label"/>
+            <Label text="Haz doble click sobre un usuario para ver su historial." styleClass="muted-label"/>
 
-            <VBox spacing="10" styleClass="card-panel" VBox.vgrow="ALWAYS">
-                <Label fx:id="selectedUserLabel" text="Historial de compras: sin seleccion"/>
-                <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="historyTicketIdColumn" text="Ticket" prefWidth="60"/>
-                        <TableColumn fx:id="historyEventColumn" text="Evento" prefWidth="150"/>
-                        <TableColumn fx:id="historyDateColumn" text="Fecha" prefWidth="140"/>
-                        <TableColumn fx:id="historySeatTypeColumn" text="Tipo" prefWidth="90"/>
-                        <TableColumn fx:id="historySeatColumn" text="Asiento" prefWidth="90"/>
-                        <TableColumn fx:id="historyPriceColumn" text="Precio" prefWidth="80"/>
-                    </columns>
-                </TableView>
-            </VBox>
+            <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="userIdColumn" text="ID" prefWidth="70"/>
+                    <TableColumn fx:id="usernameColumn" text="Username" prefWidth="180"/>
+                    <TableColumn fx:id="userNameColumn" text="Nombre" prefWidth="260"/>
+                    <TableColumn fx:id="userRoleColumn" text="Rol" prefWidth="110"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <VBox fx:id="userHistoryPane" spacing="14" HBox.hgrow="ALWAYS" visible="false" managed="false">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button text="Atras" onAction="#onBackToUsers" styleClass="secondary-button"/>
+                <Label fx:id="selectedUserLabel" text="Historial de compras" styleClass="subtitle-label"/>
+            </HBox>
+
+            <Label fx:id="selectedUserMetaLabel" text="Selecciona un usuario desde la lista" styleClass="muted-label"/>
+
+            <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="historyTicketIdColumn" text="Ticket" prefWidth="70"/>
+                    <TableColumn fx:id="historyEventColumn" text="Evento" prefWidth="220"/>
+                    <TableColumn fx:id="historyDateColumn" text="Fecha" prefWidth="170"/>
+                    <TableColumn fx:id="historySeatTypeColumn" text="Tipo" prefWidth="120"/>
+                    <TableColumn fx:id="historySeatColumn" text="Asiento" prefWidth="120"/>
+                    <TableColumn fx:id="historyPriceColumn" text="Precio" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <VBox fx:id="salesPane" spacing="14" HBox.hgrow="ALWAYS" visible="false" managed="false">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Tickets y ventas" styleClass="subtitle-label"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="salesSearchField" promptText="Buscar por ticket, usuario o evento" prefWidth="280"/>
+            </HBox>
+
+            <HBox spacing="12">
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Tickets vendidos" styleClass="muted-label"/>
+                    <Label fx:id="salesSummaryLabel" text="Tickets vendidos: 0" styleClass="metric-value"/>
+                </VBox>
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Compradores" styleClass="muted-label"/>
+                    <Label fx:id="salesUsersLabel" text="Usuarios compradores: 0" styleClass="metric-value"/>
+                </VBox>
+                <VBox spacing="6" styleClass="metric-card" HBox.hgrow="ALWAYS">
+                    <Label text="Ingresos" styleClass="muted-label"/>
+                    <Label fx:id="salesRevenueLabel" text="Ingresos estimados: Bs 0.00" styleClass="metric-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" VBox.vgrow="ALWAYS">
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="Ventas por evento" styleClass="muted-label"/>
+                    <TableView fx:id="eventSalesTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="eventSalesLabelColumn" text="Evento" prefWidth="240"/>
+                            <TableColumn fx:id="eventSalesTicketsColumn" text="Tickets" prefWidth="90"/>
+                            <TableColumn fx:id="eventSalesRevenueColumn" text="Ingresos" prefWidth="110"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="Ventas por tipo de asiento" styleClass="muted-label"/>
+                    <TableView fx:id="seatTypeSalesTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="seatSalesLabelColumn" text="Tipo" prefWidth="180"/>
+                            <TableColumn fx:id="seatSalesTicketsColumn" text="Tickets" prefWidth="90"/>
+                            <TableColumn fx:id="seatSalesRevenueColumn" text="Ingresos" prefWidth="110"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </HBox>
+
+            <Label text="Compras registradas" styleClass="muted-label"/>
+            <TableView fx:id="soldTicketsTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="soldTicketIdColumn" text="Ticket" prefWidth="70"/>
+                    <TableColumn fx:id="soldTicketUserColumn" text="Username" prefWidth="120"/>
+                    <TableColumn fx:id="soldTicketNameColumn" text="Nombre" prefWidth="160"/>
+                    <TableColumn fx:id="soldTicketEventColumn" text="Evento" prefWidth="190"/>
+                    <TableColumn fx:id="soldTicketDateColumn" text="Fecha" prefWidth="150"/>
+                    <TableColumn fx:id="soldTicketSeatTypeColumn" text="Tipo" prefWidth="100"/>
+                    <TableColumn fx:id="soldTicketSeatColumn" text="Asiento" prefWidth="100"/>
+                    <TableColumn fx:id="soldTicketPriceColumn" text="Precio" prefWidth="90"/>
+                </columns>
+            </TableView>
         </VBox>
     </HBox>
+
+    <VBox fx:id="clientRoot" spacing="14" VBox.vgrow="ALWAYS" visible="false" managed="false">
+        <Label text="Eventos disponibles" styleClass="subtitle-label"/>
+        <TableView fx:id="clientEventsTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="clientEventIdColumn" text="ID" prefWidth="70"/>
+                <TableColumn fx:id="clientEventNameColumn" text="Evento" prefWidth="240"/>
+                <TableColumn fx:id="clientEventDateColumn" text="Fecha" prefWidth="190"/>
+                <TableColumn fx:id="clientEventCapacityColumn" text="Capacidad" prefWidth="110"/>
+            </columns>
+        </TableView>
+
+        <VBox spacing="10" styleClass="card-panel">
+            <Label text="Comprar tickets" styleClass="subtitle-label"/>
+            <ComboBox fx:id="ticketTypeCombo" promptText="Selecciona tipo de ticket"/>
+            <Spinner fx:id="quantitySpinner"/>
+            <Button text="Comprar" onAction="#onBuy" styleClass="primary-button"/>
+        </VBox>
+    </VBox>
 </VBox>

@@ -1,15 +1,19 @@
 edu\upb\desktop\util\SessionManager.class
+edu\upb\desktop\model\SalesAggregateModel.class
 edu\upb\desktop\controller\LoginController.class
+edu\upb\desktop\controller\EventsController$AggregateCounter.class
 edu\upb\desktop\model\UserTicketHistoryModel.class
 edu\upb\desktop\service\EventService.class
 edu\upb\desktop\model\EventModel.class
 edu\upb\desktop\service\MonitorService.class
 edu\upb\desktop\MainUI.class
 edu\upb\desktop\controller\EventWizardController.class
+edu\upb\desktop\model\BackendStatusModel.class
 edu\upb\desktop\model\LoginResultModel.class
 edu\upb\desktop\tools\BankWebhookClient.class
 edu\upb\desktop\app\DesktopApp.class
 edu\upb\desktop\util\AlertUtil.class
+edu\upb\desktop\model\AdminTicketSaleModel.class
 edu\upb\desktop\service\TicketGrpcClient.class
 edu\upb\desktop\model\EventTicketTypeDraftModel.class
 edu\upb\desktop\controller\EventsController.class
@@ -17,6 +21,7 @@ edu\upb\desktop\model\AdminUserModel.class
 edu\upb\desktop\controller\RegisterController.class
 edu\upb\desktop\model\PurchaseResultModel.class
 edu\upb\desktop\service\AdminUserService.class
+edu\upb\desktop\util\SpinnerUtil.class
 edu\upb\desktop\model\TicketTypeModel.class
 edu\upb\desktop\service\AuthService.class
 edu\upb\desktop\model\UserModel.class

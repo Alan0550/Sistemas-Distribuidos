@@ -7,13 +7,16 @@ public class AdminUserModel {
     private final String username;
     private final String nombre;
     private final String rol;
+    private final boolean baneado;
     private final List<UserTicketHistoryModel> historial;
 
-    public AdminUserModel(long id, String username, String nombre, String rol, List<UserTicketHistoryModel> historial) {
+    public AdminUserModel(long id, String username, String nombre, String rol, boolean baneado,
+            List<UserTicketHistoryModel> historial) {
         this.id = id;
         this.username = username;
         this.nombre = nombre;
         this.rol = rol;
+        this.baneado = baneado;
         this.historial = historial;
     }
 
@@ -31,6 +34,10 @@ public class AdminUserModel {
 
     public String getRol() {
         return rol;
+    }
+
+    public boolean isBaneado() {
+        return baneado;
     }
 
     public List<UserTicketHistoryModel> getHistorial() {

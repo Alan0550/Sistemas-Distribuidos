@@ -48,7 +48,9 @@ public class EventService {
                                 type.get("id").getAsLong(),
                                 type.get("tipo_asiento").getAsString(),
                                 type.get("cantidad").getAsInt(),
-                                type.get("precio").getAsBigDecimal()));
+                                type.get("precio").getAsBigDecimal(),
+                                readBigDecimal(type, "precio_base", type.get("precio").getAsBigDecimal()),
+                                readBigDecimal(type, "descuento_porcentaje", BigDecimal.ZERO)));
                     }
                 }
                 events.add(new EventModel(
@@ -56,17 +58,19 @@ public class EventService {
                         item.get("nombre").getAsString(),
                         item.get("fecha").getAsString(),
                         item.get("capacidad").getAsInt(),
+                        item.has("descuento_frecuente") && item.get("descuento_frecuente").getAsBoolean(),
                         ticketTypes));
             }
             return events;
         }
     }
 
-    public EventModel createEvent(String nombre, String fecha, int capacidad) throws Exception {
+    public EventModel createEvent(String nombre, String fecha, int capacidad, boolean descuentoFrecuente) throws Exception {
         JsonObject body = new JsonObject();
         body.addProperty("nombre", nombre);
         body.addProperty("fecha", fecha);
         body.addProperty("capacidad", capacidad);
+        body.addProperty("descuento_frecuente", descuentoFrecuente);
 
         HttpURLConnection conn = openConnection(baseUrl + "/events", "POST");
         writeBody(conn, body.toString());
@@ -82,6 +86,7 @@ public class EventService {
                     item.get("nombre").getAsString(),
                     item.get("fecha").getAsString(),
                     item.get("capacidad").getAsInt(),
+                    item.has("descuento_frecuente") && item.get("descuento_frecuente").getAsBoolean(),
                     new ArrayList<>());
         }
     }
@@ -105,16 +110,20 @@ public class EventService {
                     item.get("id").getAsLong(),
                     item.get("tipo_asiento").getAsString(),
                     item.get("cantidad").getAsInt(),
-                    item.get("precio").getAsBigDecimal());
+                    item.get("precio").getAsBigDecimal(),
+                    item.get("precio").getAsBigDecimal(),
+                    BigDecimal.ZERO);
         }
     }
 
-    public EventModel createFullEvent(String nombre, String fecha, int capacidad, List<EventTicketTypeDraftModel> ticketTypes)
+    public EventModel createFullEvent(String nombre, String fecha, int capacidad, boolean descuentoFrecuente,
+            List<EventTicketTypeDraftModel> ticketTypes)
             throws Exception {
         JsonObject body = new JsonObject();
         body.addProperty("nombre", nombre);
         body.addProperty("fecha", fecha);
         body.addProperty("capacidad", capacidad);
+        body.addProperty("descuento_frecuente", descuentoFrecuente);
 
         JsonArray types = new JsonArray();
         for (EventTicketTypeDraftModel draft : ticketTypes) {
@@ -144,7 +153,9 @@ public class EventService {
                             type.get("id").getAsLong(),
                             type.get("tipo_asiento").getAsString(),
                             type.get("cantidad").getAsInt(),
-                            type.get("precio").getAsBigDecimal()));
+                            type.get("precio").getAsBigDecimal(),
+                            type.get("precio").getAsBigDecimal(),
+                            BigDecimal.ZERO));
                 }
             }
             return new EventModel(
@@ -152,8 +163,13 @@ public class EventService {
                     item.get("nombre").getAsString(),
                     item.get("fecha").getAsString(),
                     item.get("capacidad").getAsInt(),
+                    item.has("descuento_frecuente") && item.get("descuento_frecuente").getAsBoolean(),
                     createdTypes);
         }
+    }
+
+    private BigDecimal readBigDecimal(JsonObject object, String key, BigDecimal fallback) {
+        return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsBigDecimal() : fallback;
     }
 
     private HttpURLConnection openConnection(String target, String method) throws Exception {

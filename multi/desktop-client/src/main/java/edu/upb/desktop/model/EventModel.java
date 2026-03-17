@@ -7,13 +7,16 @@ public class EventModel {
     private final String nombre;
     private final String fecha;
     private final int capacidad;
+    private final boolean descuentoFrecuente;
     private final List<TicketTypeModel> ticketTypes;
 
-    public EventModel(long id, String nombre, String fecha, int capacidad, List<TicketTypeModel> ticketTypes) {
+    public EventModel(long id, String nombre, String fecha, int capacidad, boolean descuentoFrecuente,
+            List<TicketTypeModel> ticketTypes) {
         this.id = id;
         this.nombre = nombre;
         this.fecha = fecha;
         this.capacidad = capacidad;
+        this.descuentoFrecuente = descuentoFrecuente;
         this.ticketTypes = ticketTypes;
     }
 
@@ -31,6 +34,10 @@ public class EventModel {
 
     public int getCapacidad() {
         return capacidad;
+    }
+
+    public boolean isDescuentoFrecuente() {
+        return descuentoFrecuente;
     }
 
     public List<TicketTypeModel> getTicketTypes() {
