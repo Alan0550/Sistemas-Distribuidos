@@ -69,14 +69,16 @@ public class TicketPurchaseService {
                     throw new IllegalArgumentException("No hay suficiente disponibilidad");
                 }
 
-                int soldCount = tipoTicketDao.countSoldTickets(conn, tipoTicketId);
+                int firstSequence = tipoTicket.getProximoAsiento();
+                tipoTicketDao.reserveInventoryAndAdvanceSequence(conn, tipoTicketId, cantidad);
+
                 long firstTicketId = 0;
                 BigDecimal discountPercent = calculateDiscountPercent(rol, evento.isDescuentoFrecuente());
                 BigDecimal finalPrice = applyDiscount(tipoTicket.getPrecio(), discountPercent);
 
-                for (int i = 1; i <= cantidad; i++) {
-                    String seat = buildSeatNumber(tipoTicket.getTipoAsiento(), soldCount + i);
-                    String requestKey = normalizedKey + "#" + i;
+                for (int i = 0; i < cantidad; i++) {
+                    String seat = buildSeatNumber(tipoTicket.getTipoAsiento(), firstSequence + i);
+                    String requestKey = normalizedKey + "#" + (i + 1);
                     long currentTicketId = ticketDao.insertTicket(
                             conn,
                             eventId,
@@ -92,7 +94,6 @@ public class TicketPurchaseService {
                     }
                 }
 
-                tipoTicketDao.decreaseAvailable(conn, tipoTicketId, cantidad);
                 userManagementService.refreshAutomaticRole(conn, userId, rol);
 
                 conn.commit();

@@ -1,26 +1,26 @@
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\app\DesktopApp.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\EventsController.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\EventWizardController.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\LoginController.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\RegisterController.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\MainUI.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\AdminTicketSaleModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\AdminUserModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\BackendStatusModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\EventModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\EventTicketTypeDraftModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\LoginResultModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\PurchaseResultModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\SalesAggregateModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\TicketTypeModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\UserModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\UserTicketHistoryModel.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\AdminUserService.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\AuthService.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\EventService.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\MonitorService.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\TicketGrpcClient.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\tools\BankWebhookClient.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\AlertUtil.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\SessionManager.java
-C:\Program Files\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\SpinnerUtil.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\app\DesktopApp.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\EventsController.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\EventWizardController.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\LoginController.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\controller\RegisterController.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\MainUI.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\AdminTicketSaleModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\AdminUserModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\BackendStatusModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\EventModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\EventTicketTypeDraftModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\LoginResultModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\PurchaseResultModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\SalesAggregateModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\TicketTypeModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\UserModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\model\UserTicketHistoryModel.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\AdminUserService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\AuthService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\EventService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\MonitorService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\service\TicketGrpcClient.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\tools\BankWebhookClient.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\AlertUtil.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\SessionManager.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\desktop-client\src\main\java\edu\upb\desktop\util\SpinnerUtil.java

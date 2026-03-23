@@ -1,32 +1,32 @@
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\AuthSessionStore.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\AuthSupport.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoDao.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoEntity.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\PurchaseLookup.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketDao.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketHistoryEntity.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketReleaseItem.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketDao.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketEntity.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioDao.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioEntity.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\DatabaseConnection.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\EventManagementService.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\EventsHandler.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketRequest.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketRequestOrBuilder.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketResponse.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketResponseOrBuilder.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\TicketPurchase.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\HttpJsonSupport.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\LoginHandler.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorHandler.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorStore.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketGrpcServer.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseService.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseServiceImpl.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketsHandler.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TmServiceApp.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\UserManagementService.java
-C:\Program Files\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\UsuariosHandler.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\AuthSessionStore.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\AuthSupport.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoDao.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\EventoEntity.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\PurchaseLookup.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketDao.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketHistoryEntity.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TicketReleaseItem.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketDao.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\TipoTicketEntity.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioDao.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\dao\UsuarioEntity.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\DatabaseConnection.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\EventManagementService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\EventsHandler.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketRequest.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketRequestOrBuilder.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketResponse.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\CompraTicketResponseOrBuilder.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\TicketPurchase.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\grpc\TicketPurchaseServiceGrpc.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\HttpJsonSupport.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\LoginHandler.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorHandler.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\MonitorStore.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketGrpcServer.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketPurchaseServiceImpl.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TicketsHandler.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\TmServiceApp.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\UserManagementService.java
+C:\Users\Alan\Documents\Proyectos\ticket_master-master\multi\tm-service\src\main\java\edu\upb\tmservice\UsuariosHandler.java

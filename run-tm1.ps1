@@ -1,4 +1,4 @@
-cd "C:\Program Files\ticket_master-master"
+cd "C:\Users\Alan\Documents\Proyectos\ticket_master-master"
 $env:TM_SERVICE_PORT="9301"
 $env:TM_GRPC_PORT="9401"
 $env:TM_SERVICE_HOST="localhost"

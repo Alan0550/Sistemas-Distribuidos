@@ -1,4 +1,4 @@
-cd "C:\Program Files\ticket_master-master"
+cd "C:\Users\Alan\Documents\Proyectos\ticket_master-master"
 $env:LB_UI_BASE_URL="http://localhost:1915/tm"
 $env:TM_GRPC_HOST="localhost"
 $env:TM_GRPC_TARGET_PORT="9401"

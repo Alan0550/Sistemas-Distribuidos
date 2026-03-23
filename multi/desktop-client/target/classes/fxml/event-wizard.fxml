@@ -15,49 +15,81 @@
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="edu.upb.desktop.controller.EventWizardController"
-      spacing="16" styleClass="screen-root">
+      spacing="20" styleClass="screen-root">
     <padding>
-        <Insets top="24" right="24" bottom="24" left="24"/>
+        <Insets top="32" right="32" bottom="32" left="32"/>
     </padding>
 
-    <Label text="Asistente de creacion de eventos" styleClass="title-label"/>
+    <VBox spacing="4">
+        <Label text="Crear nuevo evento" styleClass="title-label"/>
+        <Label text="Completa los pasos para publicar un evento" styleClass="muted-label"/>
+    </VBox>
 
-    <VBox fx:id="stepOnePane" spacing="12" styleClass="card-panel">
-        <Label text="Paso 1: Datos del evento" styleClass="subtitle-label"/>
-        <TextField fx:id="eventNameField" promptText="Nombre del evento"/>
-        <HBox spacing="8" alignment="CENTER_LEFT">
-            <DatePicker fx:id="eventDatePicker"/>
-            <Label text="Hora"/>
-            <Spinner fx:id="eventHourSpinner" prefWidth="80"/>
-            <Label text="Min"/>
-            <Spinner fx:id="eventMinuteSpinner" prefWidth="80"/>
+    <VBox fx:id="stepOnePane" spacing="16" styleClass="card-panel">
+        <Label text="PASO 1 - DATOS DEL EVENTO" styleClass="section-label"/>
+        <Label text="Informacion general" styleClass="subtitle-label"/>
+
+        <VBox spacing="6">
+            <Label text="NOMBRE DEL EVENTO" styleClass="form-label"/>
+            <TextField fx:id="eventNameField" promptText="Ej: Festival de Jazz 2026"
+                       maxWidth="Infinity" styleClass="text-input"/>
+        </VBox>
+
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="FECHA" styleClass="form-label"/>
+                <DatePicker fx:id="eventDatePicker" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="6">
+                <Label text="HORA" styleClass="form-label"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Spinner fx:id="eventHourSpinner" prefWidth="80" styleClass="spinner"/>
+                    <Label text=":" styleClass="muted-label"/>
+                    <Spinner fx:id="eventMinuteSpinner" prefWidth="80" styleClass="spinner"/>
+                </HBox>
+            </VBox>
         </HBox>
-        <Spinner fx:id="eventCapacitySpinner"/>
-        <CheckBox fx:id="frequentDiscountCheckBox" text="Descuentos para usuarios frecuentes"/>
+
+        <VBox spacing="6">
+            <Label text="CAPACIDAD TOTAL" styleClass="form-label"/>
+            <Spinner fx:id="eventCapacitySpinner" prefWidth="160" styleClass="spinner"/>
+        </VBox>
+
+        <CheckBox fx:id="frequentDiscountCheckBox"
+                  text="Habilitar descuento para usuarios frecuentes"/>
+
         <HBox spacing="10" alignment="CENTER_RIGHT">
-            <Region HBox.hgrow="ALWAYS"/>
             <Button text="Cancelar" onAction="#onCancel" styleClass="secondary-button"/>
-            <Button text="Siguiente" onAction="#onNextStep" styleClass="primary-button"/>
+            <Button text="Siguiente ->" onAction="#onNextStep" styleClass="primary-button"/>
         </HBox>
     </VBox>
 
-    <VBox fx:id="stepTwoPane" spacing="12" styleClass="card-panel">
-        <Label text="Paso 2: Configurar tipos de asiento" styleClass="subtitle-label"/>
-        <Label fx:id="wizardSummaryLabel" text="Evento"/>
-        <Label fx:id="remainingCapacityLabel" text="Capacidad restante por asignar: 0"/>
-        <HBox spacing="8" alignment="CENTER_LEFT">
-            <TextField fx:id="seatTypeField" promptText="Tipo de asiento"/>
-            <Spinner fx:id="ticketTypeQuantitySpinner" prefWidth="110"/>
-            <TextField fx:id="ticketTypePriceField" promptText="Precio" prefWidth="120"/>
-            <Button text="Agregar" onAction="#onAddTicketType" styleClass="primary-button"/>
+    <VBox fx:id="stepTwoPane" spacing="16" styleClass="card-panel">
+        <Label text="PASO 2 - TIPOS DE ASIENTO" styleClass="section-label"/>
+        <Label text="Configura los tipos y precios" styleClass="subtitle-label"/>
+
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label fx:id="wizardSummaryLabel" text="Evento: -" styleClass="muted-label"/>
+                <Label fx:id="remainingCapacityLabel" text="Capacidad restante por asignar: 0" styleClass="muted-label"/>
+            </VBox>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <TextField fx:id="seatTypeField" promptText="Tipo de asiento (Ej: VIP, General)"
+                       HBox.hgrow="ALWAYS" styleClass="text-input"/>
+            <Spinner fx:id="ticketTypeQuantitySpinner" prefWidth="110" styleClass="spinner"/>
+            <TextField fx:id="ticketTypePriceField" promptText="Precio (Bs)"
+                       prefWidth="120" styleClass="text-input"/>
+            <Button text="+ Agregar" onAction="#onAddTicketType" styleClass="primary-button"/>
             <Button text="Quitar" onAction="#onRemoveTicketType" styleClass="secondary-button"/>
         </HBox>
 
-        <TableView fx:id="ticketTypesTable" prefHeight="260">
+        <TableView fx:id="ticketTypesTable" prefHeight="240">
             <columns>
-                <TableColumn fx:id="seatTypeColumn" text="Tipo" prefWidth="220"/>
+                <TableColumn fx:id="seatTypeColumn" text="Tipo de asiento" prefWidth="240"/>
                 <TableColumn fx:id="quantityColumn" text="Cantidad" prefWidth="120"/>
-                <TableColumn fx:id="priceColumn" text="Precio" prefWidth="120"/>
+                <TableColumn fx:id="priceColumn" text="Precio (Bs)" prefWidth="120"/>
             </columns>
         </TableView>
 
@@ -65,7 +97,9 @@
             <Button text="Volver" onAction="#onBackStep" styleClass="secondary-button"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="Cancelar" onAction="#onCancel" styleClass="secondary-button"/>
-            <Button fx:id="finishButton" text="Guardar evento" onAction="#onFinish" styleClass="primary-button"/>
+            <Button fx:id="finishButton" text="Guardar evento"
+                    onAction="#onFinish" styleClass="primary-button"/>
         </HBox>
     </VBox>
 </VBox>
+

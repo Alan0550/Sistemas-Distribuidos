@@ -14,7 +14,10 @@ import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public class EventManagementService {
     private static final BigDecimal TEN_PERCENT = new BigDecimal("10.00");
@@ -77,7 +80,7 @@ public class EventManagementService {
             throw new IllegalArgumentException("Evento invalido");
         }
 
-        String seatType = requireText(tipoAsiento, "Datos invalidos para el tipo de ticket");
+        String seatType = normalizeSeatType(tipoAsiento, "Datos invalidos para el tipo de ticket");
         if (cantidad <= 0 || precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Datos invalidos para el tipo de ticket");
         }
@@ -90,6 +93,9 @@ public class EventManagementService {
                 int eventCapacity = eventoDao.loadEventCapacity(conn, eventId);
                 if (eventCapacity <= 0) {
                     throw new IllegalArgumentException("El evento no existe");
+                }
+                if (tipoTicketDao.existsByEventAndSeatType(conn, eventId, seatType)) {
+                    throw new IllegalArgumentException("Ya existe un tipo de ticket con ese nombre para el evento");
                 }
 
                 int usedCapacity = tipoTicketDao.loadAssignedCapacity(conn, eventId);
@@ -134,12 +140,17 @@ public class EventManagementService {
             conn.setAutoCommit(false);
             try {
                 int assignedCapacity = 0;
+                Set<String> uniqueSeatTypes = new HashSet<String>();
                 for (int i = 0; i < tipos.size(); i++) {
                     JsonObject tipo = tipos.get(i).getAsJsonObject();
-                    String seatType = requireText(readString(tipo, "tipo_asiento"), "Todos los tipos de ticket deben ser validos");
+                    String seatType = normalizeSeatType(readString(tipo, "tipo_asiento"),
+                            "Todos los tipos de ticket deben ser validos");
                     int cantidad = readInt(tipo, "cantidad");
                     BigDecimal precio = readDecimal(tipo, "precio");
 
+                    if (!uniqueSeatTypes.add(seatType)) {
+                        throw new IllegalArgumentException("No puede haber tipos de ticket repetidos en el evento");
+                    }
                     if (cantidad <= 0 || precio.compareTo(BigDecimal.ZERO) <= 0) {
                         throw new IllegalArgumentException("Todos los tipos de ticket deben ser validos");
                     }
@@ -157,7 +168,8 @@ public class EventManagementService {
                 JsonArray tiposResp = new JsonArray();
                 for (int i = 0; i < tipos.size(); i++) {
                     JsonObject tipo = tipos.get(i).getAsJsonObject();
-                    String seatType = tipo.get("tipo_asiento").getAsString().trim();
+                    String seatType = normalizeSeatType(tipo.get("tipo_asiento").getAsString(),
+                            "Todos los tipos de ticket deben ser validos");
                     int cantidad = tipo.get("cantidad").getAsInt();
                     BigDecimal precio = tipo.get("precio").getAsBigDecimal();
 
@@ -213,6 +225,10 @@ public class EventManagementService {
             throw new IllegalArgumentException(message);
         }
         return normalized;
+    }
+
+    private String normalizeSeatType(String value, String message) {
+        return requireText(value, message).toUpperCase(Locale.ROOT);
     }
 
     private Timestamp parseFecha(String fecha) {

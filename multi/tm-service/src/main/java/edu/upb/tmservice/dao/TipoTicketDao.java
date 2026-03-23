@@ -21,7 +21,7 @@ public class TipoTicketDao {
     public List<TipoTicketEntity> listByEventId(Connection conn, long eventId) throws SQLException {
         List<TipoTicketEntity> types = new ArrayList<TipoTicketEntity>();
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, id_evento, tipo_asiento, cantidad, precio FROM tipo_ticket WHERE id_evento = ? ORDER BY id")) {
+                "SELECT id, id_evento, tipo_asiento, cantidad, precio, COALESCE(proximo_asiento, 1) AS proximo_asiento FROM tipo_ticket WHERE id_evento = ? ORDER BY id")) {
             ps.setLong(1, eventId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -30,7 +30,8 @@ public class TipoTicketDao {
                             rs.getLong("id_evento"),
                             rs.getString("tipo_asiento"),
                             rs.getInt("cantidad"),
-                            rs.getBigDecimal("precio")));
+                            rs.getBigDecimal("precio"),
+                            rs.getInt("proximo_asiento")));
                 }
             }
         }
@@ -40,7 +41,7 @@ public class TipoTicketDao {
     public long create(Connection conn, long eventId, String tipoAsiento, int cantidad, BigDecimal precio) throws SQLException {
         long typeId = 0;
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO tipo_ticket (id_evento, tipo_asiento, cantidad, precio) VALUES (?,?,?,?)",
+                "INSERT INTO tipo_ticket (id_evento, tipo_asiento, cantidad, precio, proximo_asiento) VALUES (?,?,?,?,1)",
                 Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, eventId);
             ps.setString(2, tipoAsiento);
@@ -71,7 +72,7 @@ public class TipoTicketDao {
 
     public TipoTicketEntity lockByIdAndEvent(Connection conn, long tipoTicketId, long eventId) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, id_evento, tipo_asiento, cantidad, precio FROM tipo_ticket WHERE id = ? AND id_evento = ? FOR UPDATE")) {
+                "SELECT id, id_evento, tipo_asiento, cantidad, precio, COALESCE(proximo_asiento, 1) AS proximo_asiento FROM tipo_ticket WHERE id = ? AND id_evento = ? FOR UPDATE")) {
             ps.setLong(1, tipoTicketId);
             ps.setLong(2, eventId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -81,31 +82,31 @@ public class TipoTicketDao {
                             rs.getLong("id_evento"),
                             rs.getString("tipo_asiento"),
                             rs.getInt("cantidad"),
-                            rs.getBigDecimal("precio"));
+                            rs.getBigDecimal("precio"),
+                            rs.getInt("proximo_asiento"));
                 }
             }
         }
         return null;
     }
 
-    public int countSoldTickets(Connection conn, long tipoTicketId) throws SQLException {
+    public boolean existsByEventAndSeatType(Connection conn, long eventId, String tipoAsiento) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT COUNT(*) FROM tickets WHERE id_tipo_ticket = ?")) {
-            ps.setLong(1, tipoTicketId);
+                "SELECT id FROM tipo_ticket WHERE id_evento = ? AND UPPER(TRIM(tipo_asiento)) = ? LIMIT 1")) {
+            ps.setLong(1, eventId);
+            ps.setString(2, tipoAsiento == null ? "" : tipoAsiento.trim().toUpperCase());
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
+                return rs.next();
             }
         }
-        return 0;
     }
 
-    public void decreaseAvailable(Connection conn, long tipoTicketId, int cantidad) throws SQLException {
+    public void reserveInventoryAndAdvanceSequence(Connection conn, long tipoTicketId, int cantidad) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE tipo_ticket SET cantidad = cantidad - ? WHERE id = ?")) {
+                "UPDATE tipo_ticket SET cantidad = cantidad - ?, proximo_asiento = proximo_asiento + ? WHERE id = ?")) {
             ps.setInt(1, cantidad);
-            ps.setLong(2, tipoTicketId);
+            ps.setInt(2, cantidad);
+            ps.setLong(3, tipoTicketId);
             ps.executeUpdate();
         }
     }

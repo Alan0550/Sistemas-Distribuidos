@@ -68,98 +68,183 @@ public class EventsController {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final long GENERAL_SALES_ID = 0L;
 
-    @FXML private Label welcomeLabel;
-    @FXML private HBox adminShell;
-    @FXML private VBox clientRoot;
-    @FXML private Button dashboardNavButton;
-    @FXML private Button eventsNavButton;
-    @FXML private Button usersNavButton;
-    @FXML private Button salesNavButton;
-    @FXML private VBox dashboardPane;
-    @FXML private VBox adminEventsPane;
-    @FXML private VBox usersListPane;
-    @FXML private VBox userHistoryPane;
-    @FXML private VBox salesPane;
-    @FXML private Label monitorStatusLabel;
-    @FXML private Label monitorBackendsLabel;
-    @FXML private Label monitorErrorsLabel;
-    @FXML private Label monitorLatencyLabel;
-    @FXML private Label monitorLastUpdateLabel;
-    @FXML private TableView<BackendStatusModel> backendTable;
-    @FXML private TableColumn<BackendStatusModel, String> backendUrlColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendStatusColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendBalancingColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendVerificationColumn;
-    @FXML private TableColumn<BackendStatusModel, Number> backendFailCountColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendDatabaseColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendDiskColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendLastCheckColumn;
-    @FXML private TableColumn<BackendStatusModel, String> backendLastErrorColumn;
-    @FXML private TextField adminEventFilterField;
-    @FXML private Button openEventWizardButton;
-    @FXML private Label adminEventsSummaryLabel;
-    @FXML private TableView<EventModel> adminEventsTable;
-    @FXML private TableColumn<EventModel, Number> adminEventIdColumn;
-    @FXML private TableColumn<EventModel, String> adminEventNameColumn;
-    @FXML private TableColumn<EventModel, String> adminEventDateColumn;
-    @FXML private TableColumn<EventModel, Number> adminEventCapacityColumn;
-    @FXML private TableColumn<EventModel, Number> adminEventAvailableColumn;
-    @FXML private TableColumn<EventModel, Number> adminEventSoldColumn;
-    @FXML private TextField userSearchField;
-    @FXML private Label usersListSummaryLabel;
-    @FXML private TableView<AdminUserModel> usersTable;
-    @FXML private TableColumn<AdminUserModel, Number> userIdColumn;
-    @FXML private TableColumn<AdminUserModel, String> usernameColumn;
-    @FXML private TableColumn<AdminUserModel, String> userNameColumn;
-    @FXML private TableColumn<AdminUserModel, String> userRoleColumn;
-    @FXML private Label selectedUserLabel;
-    @FXML private Label selectedUserMetaLabel;
-    @FXML private TableView<UserTicketHistoryModel> historyTable;
-    @FXML private TableColumn<UserTicketHistoryModel, Number> historyTicketIdColumn;
-    @FXML private TableColumn<UserTicketHistoryModel, String> historyEventColumn;
-    @FXML private TableColumn<UserTicketHistoryModel, String> historyDateColumn;
-    @FXML private TableColumn<UserTicketHistoryModel, String> historySeatTypeColumn;
-    @FXML private TableColumn<UserTicketHistoryModel, String> historySeatColumn;
-    @FXML private TableColumn<UserTicketHistoryModel, String> historyPriceColumn;
-    @FXML private Label salesSummaryLabel;
-    @FXML private Label salesUsersLabel;
-    @FXML private Label salesRevenueLabel;
-    @FXML private TextField salesSearchField;
-    @FXML private TableView<SalesAggregateModel> eventSalesTable;
-    @FXML private TableColumn<SalesAggregateModel, String> eventSalesLabelColumn;
-    @FXML private TableColumn<SalesAggregateModel, Number> eventSalesTicketsColumn;
-    @FXML private TableColumn<SalesAggregateModel, BigDecimal> eventSalesRevenueColumn;
-    @FXML private TableView<SalesAggregateModel> seatTypeSalesTable;
-    @FXML private TableColumn<SalesAggregateModel, String> seatSalesLabelColumn;
-    @FXML private TableColumn<SalesAggregateModel, Number> seatSalesTicketsColumn;
-    @FXML private TableColumn<SalesAggregateModel, BigDecimal> seatSalesRevenueColumn;
-    @FXML private TableView<AdminTicketSaleModel> soldTicketsTable;
-    @FXML private TableColumn<AdminTicketSaleModel, Number> soldTicketIdColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketUserColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketNameColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketEventColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketDateColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketSeatTypeColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, String> soldTicketSeatColumn;
-    @FXML private TableColumn<AdminTicketSaleModel, BigDecimal> soldTicketPriceColumn;
-    @FXML private TableView<EventModel> clientEventsTable;
-    @FXML private TableColumn<EventModel, Number> clientEventIdColumn;
-    @FXML private TableColumn<EventModel, String> clientEventNameColumn;
-    @FXML private TableColumn<EventModel, String> clientEventDateColumn;
-    @FXML private TableColumn<EventModel, Number> clientEventCapacityColumn;
-    @FXML private ComboBox<TicketTypeModel> ticketTypeCombo;
-    @FXML private Spinner<Integer> quantitySpinner;
+    @FXML
+    private Label welcomeLabel;
+    @FXML
+    private Label clientWelcomeLabel;
+    @FXML
+    private HBox adminShell;
+    @FXML
+    private VBox clientRoot;
+    @FXML
+    private Button dashboardNavButton;
+    @FXML
+    private Button eventsNavButton;
+    @FXML
+    private Button usersNavButton;
+    @FXML
+    private Button salesNavButton;
+    @FXML
+    private VBox dashboardPane;
+    @FXML
+    private VBox adminEventsPane;
+    @FXML
+    private VBox usersListPane;
+    @FXML
+    private VBox userHistoryPane;
+    @FXML
+    private VBox salesPane;
+    @FXML
+    private Label monitorStatusLabel;
+    @FXML
+    private Label monitorBackendsLabel;
+    @FXML
+    private Label monitorErrorsLabel;
+    @FXML
+    private Label monitorLatencyLabel;
+    @FXML
+    private Label monitorLastUpdateLabel;
+    @FXML
+    private TableView<BackendStatusModel> backendTable;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendUrlColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendStatusColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendBalancingColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendVerificationColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, Number> backendFailCountColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendDatabaseColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendDiskColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendLastCheckColumn;
+    @FXML
+    private TableColumn<BackendStatusModel, String> backendLastErrorColumn;
+    @FXML
+    private TextField adminEventFilterField;
+    @FXML
+    private Button openEventWizardButton;
+    @FXML
+    private Label adminEventsSummaryLabel;
+    @FXML
+    private TableView<EventModel> adminEventsTable;
+    @FXML
+    private TableColumn<EventModel, Number> adminEventIdColumn;
+    @FXML
+    private TableColumn<EventModel, String> adminEventNameColumn;
+    @FXML
+    private TableColumn<EventModel, String> adminEventDateColumn;
+    @FXML
+    private TableColumn<EventModel, Number> adminEventCapacityColumn;
+    @FXML
+    private TableColumn<EventModel, Number> adminEventAvailableColumn;
+    @FXML
+    private TableColumn<EventModel, Number> adminEventSoldColumn;
+    @FXML
+    private TextField userSearchField;
+    @FXML
+    private Label usersListSummaryLabel;
+    @FXML
+    private TableView<AdminUserModel> usersTable;
+    @FXML
+    private TableColumn<AdminUserModel, Number> userIdColumn;
+    @FXML
+    private TableColumn<AdminUserModel, String> usernameColumn;
+    @FXML
+    private TableColumn<AdminUserModel, String> userNameColumn;
+    @FXML
+    private TableColumn<AdminUserModel, String> userRoleColumn;
+    @FXML
+    private Label selectedUserLabel;
+    @FXML
+    private Label selectedUserMetaLabel;
+    @FXML
+    private TableView<UserTicketHistoryModel> historyTable;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, Number> historyTicketIdColumn;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, String> historyEventColumn;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, String> historyDateColumn;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, String> historySeatTypeColumn;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, String> historySeatColumn;
+    @FXML
+    private TableColumn<UserTicketHistoryModel, String> historyPriceColumn;
+    @FXML
+    private Label salesSummaryLabel;
+    @FXML
+    private Label salesUsersLabel;
+    @FXML
+    private Label salesRevenueLabel;
+    @FXML
+    private TextField salesSearchField;
+    @FXML
+    private TableView<SalesAggregateModel> eventSalesTable;
+    @FXML
+    private TableColumn<SalesAggregateModel, String> eventSalesLabelColumn;
+    @FXML
+    private TableColumn<SalesAggregateModel, Number> eventSalesTicketsColumn;
+    @FXML
+    private TableColumn<SalesAggregateModel, BigDecimal> eventSalesRevenueColumn;
+    @FXML
+    private TableView<SalesAggregateModel> seatTypeSalesTable;
+    @FXML
+    private TableColumn<SalesAggregateModel, String> seatSalesLabelColumn;
+    @FXML
+    private TableColumn<SalesAggregateModel, Number> seatSalesTicketsColumn;
+    @FXML
+    private TableColumn<SalesAggregateModel, BigDecimal> seatSalesRevenueColumn;
+    @FXML
+    private TableView<AdminTicketSaleModel> soldTicketsTable;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, Number> soldTicketIdColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketUserColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketNameColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketEventColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketDateColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketSeatTypeColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, String> soldTicketSeatColumn;
+    @FXML
+    private TableColumn<AdminTicketSaleModel, BigDecimal> soldTicketPriceColumn;
+    @FXML
+    private TableView<EventModel> clientEventsTable;
+    @FXML
+    private TableColumn<EventModel, Number> clientEventIdColumn;
+    @FXML
+    private TableColumn<EventModel, String> clientEventNameColumn;
+    @FXML
+    private TableColumn<EventModel, String> clientEventDateColumn;
+    @FXML
+    private TableColumn<EventModel, Number> clientEventCapacityColumn;
+    @FXML
+    private ComboBox<TicketTypeModel> ticketTypeCombo;
+    @FXML
+    private Spinner<Integer> quantitySpinner;
 
     private final EventService eventService = new EventService();
     private final MonitorService monitorService = new MonitorService();
     private final AdminUserService adminUserService = new AdminUserService();
     private final TicketGrpcClient ticketGrpcClient = new TicketGrpcClient();
     private final AtomicBoolean monitorFetchInFlight = new AtomicBoolean(false);
+    private final AtomicBoolean businessDataFetchInFlight = new AtomicBoolean(false);
 
     private final List<EventModel> cachedEvents = new ArrayList<EventModel>();
     private final List<AdminUserModel> cachedUsers = new ArrayList<AdminUserModel>();
     private final List<AdminTicketSaleModel> cachedSales = new ArrayList<AdminTicketSaleModel>();
     private Timeline monitorTimeline;
+    private Timeline businessDataTimeline;
     private AdminUserModel selectedAdminUser;
     private long selectedSalesEventId = GENERAL_SALES_ID;
 
@@ -175,7 +260,11 @@ public class EventsController {
     public void loadInitialData() {
         UserModel user = SessionManager.getCurrentUser();
         if (user != null) {
-            welcomeLabel.setText("Bienvenido, " + user.getNombre() + " (" + user.getRol() + ")");
+            String welcomeText = "Bienvenido, " + user.getNombre() + " (" + user.getRol() + ")";
+            welcomeLabel.setText(welcomeText);
+            if (clientWelcomeLabel != null) {
+                clientWelcomeLabel.setText(welcomeText);
+            }
         }
 
         if (isAdmin()) {
@@ -187,13 +276,24 @@ public class EventsController {
             loadEvents();
             loadAdminUsers();
             startMonitorAutoRefresh();
+            startBusinessAutoRefresh();
         } else {
             adminShell.setVisible(false);
             adminShell.setManaged(false);
+            setPaneVisible(dashboardPane, false);
+            setPaneVisible(adminEventsPane, false);
+            setPaneVisible(usersListPane, false);
+            setPaneVisible(userHistoryPane, false);
+            setPaneVisible(salesPane, false);
+            updateNavState(dashboardNavButton, false);
+            updateNavState(eventsNavButton, false);
+            updateNavState(usersNavButton, false);
+            updateNavState(salesNavButton, false);
             clientRoot.setVisible(true);
             clientRoot.setManaged(true);
             loadEvents();
             stopMonitorAutoRefresh();
+            startBusinessAutoRefresh();
         }
     }
 
@@ -294,6 +394,7 @@ public class EventsController {
                             + "\nTickets creados: " + result.getTicketsCreados()
                             + "\nMensaje: " + result.getMensaje());
             loadEvents();
+            refreshBusinessDataAsync();
             selectEventById(clientEventsTable, event.getId());
         } catch (Exception e) {
             AlertUtil.error("Compra", e.getMessage() != null ? e.getMessage() : "No se pudo realizar la compra");
@@ -304,6 +405,7 @@ public class EventsController {
     private void onLogout() {
         try {
             stopMonitorAutoRefresh();
+            stopBusinessAutoRefresh();
             SessionManager.clear();
             DesktopApp.getInstance().showLogin();
         } catch (Exception e) {
@@ -316,13 +418,15 @@ public class EventsController {
         adminEventNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNombre()));
         adminEventDateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFecha()));
         adminEventCapacityColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCapacidad()));
-        adminEventAvailableColumn.setCellValueFactory(data -> new SimpleIntegerProperty(availableTickets(data.getValue())));
+        adminEventAvailableColumn
+                .setCellValueFactory(data -> new SimpleIntegerProperty(availableTickets(data.getValue())));
         adminEventSoldColumn.setCellValueFactory(data -> new SimpleIntegerProperty(soldTickets(data.getValue())));
 
         clientEventIdColumn.setCellValueFactory(data -> new SimpleLongProperty(data.getValue().getId()));
         clientEventNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNombre()));
         clientEventDateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFecha()));
-        clientEventCapacityColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCapacidad()));
+        clientEventCapacityColumn
+                .setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getCapacidad()));
 
         userIdColumn.setCellValueFactory(data -> new SimpleLongProperty(data.getValue().getId()));
         usernameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUsername()));
@@ -339,10 +443,13 @@ public class EventsController {
 
         backendUrlColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getBackendUrl()));
         backendStatusColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus()));
-        backendBalancingColumn.setCellValueFactory(data -> new SimpleStringProperty(boolText(data.getValue().isInBalancing())));
-        backendVerificationColumn.setCellValueFactory(data -> new SimpleStringProperty(boolText(data.getValue().isInVerification())));
+        backendBalancingColumn
+                .setCellValueFactory(data -> new SimpleStringProperty(boolText(data.getValue().isInBalancing())));
+        backendVerificationColumn
+                .setCellValueFactory(data -> new SimpleStringProperty(boolText(data.getValue().isInVerification())));
         backendFailCountColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getFailCount()));
-        backendDatabaseColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDatabaseStatus()));
+        backendDatabaseColumn
+                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDatabaseStatus()));
         backendDiskColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDiskStatus()));
         backendLastCheckColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLastCheck()));
         backendLastErrorColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLastError()));
@@ -354,15 +461,19 @@ public class EventsController {
         soldTicketDateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEventDate()));
         soldTicketSeatTypeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSeatType()));
         soldTicketSeatColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSeatNumber()));
-        soldTicketPriceColumn.setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getPrice()));
+        soldTicketPriceColumn
+                .setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getPrice()));
 
         eventSalesLabelColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLabel()));
-        eventSalesTicketsColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getTicketsSold()));
-        eventSalesRevenueColumn.setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getRevenue()));
+        eventSalesTicketsColumn
+                .setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getTicketsSold()));
+        eventSalesRevenueColumn
+                .setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getRevenue()));
 
         seatSalesLabelColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLabel()));
         seatSalesTicketsColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getTicketsSold()));
-        seatSalesRevenueColumn.setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getRevenue()));
+        seatSalesRevenueColumn
+                .setCellValueFactory(data -> new SimpleObjectProperty<BigDecimal>(data.getValue().getRevenue()));
     }
 
     private void configureAdminInteractions() {
@@ -370,12 +481,12 @@ public class EventsController {
         userSearchField.textProperty().addListener((obs, old, value) -> applyUserFilter());
         salesSearchField.textProperty().addListener((obs, old, value) -> refreshSalesView());
 
-        adminEventsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) ->
-                updateAdminEventSummary(selected));
-        clientEventsTable.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) ->
-                updateClientPurchaseOptions(selected));
-        ticketTypeCombo.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) ->
-                updateQuantityLimit(selected));
+        adminEventsTable.getSelectionModel().selectedItemProperty()
+                .addListener((obs, old, selected) -> updateAdminEventSummary(selected));
+        clientEventsTable.getSelectionModel().selectedItemProperty()
+                .addListener((obs, old, selected) -> updateClientPurchaseOptions(selected));
+        ticketTypeCombo.getSelectionModel().selectedItemProperty()
+                .addListener((obs, old, selected) -> updateQuantityLimit(selected));
         eventSalesTable.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
             selectedSalesEventId = selected != null ? selected.getId() : GENERAL_SALES_ID;
             refreshSalesView();
@@ -403,18 +514,7 @@ public class EventsController {
 
     private void loadEvents() {
         try {
-            cachedEvents.clear();
-            cachedEvents.addAll(eventService.fetchEvents());
-            applyAdminEventFilter();
-            clientEventsTable.setItems(FXCollections.observableArrayList(cachedEvents));
-            if (!cachedEvents.isEmpty()) {
-                adminEventsTable.getSelectionModel().selectFirst();
-                clientEventsTable.getSelectionModel().selectFirst();
-            } else {
-                adminEventsSummaryLabel.setText("No hay eventos registrados");
-                ticketTypeCombo.setItems(FXCollections.emptyObservableList());
-                updateQuantityLimit(null);
-            }
+            applyEventsData(eventService.fetchEvents(), true);
         } catch (Exception e) {
             AlertUtil.error("Eventos", "No se pudieron cargar los eventos");
         }
@@ -422,14 +522,179 @@ public class EventsController {
 
     private void loadAdminUsers() {
         try {
-            cachedUsers.clear();
-            cachedUsers.addAll(adminUserService.fetchUsersWithHistory());
-            applyUserFilter();
-            rebuildSalesData();
-            refreshSelectedUser();
+            applyAdminUsersData(adminUserService.fetchUsersWithHistory(), true);
         } catch (Exception e) {
             AlertUtil.error("Usuarios", "No se pudieron cargar los usuarios");
         }
+    }
+
+    private void applyEventsData(List<EventModel> events, boolean preserveSelections) {
+        long selectedAdminEventId = preserveSelections ? selectedEventId(adminEventsTable) : -1L;
+        long selectedClientEventId = preserveSelections ? selectedEventId(clientEventsTable) : -1L;
+        long selectedTicketTypeId = preserveSelections ? selectedTicketTypeId() : -1L;
+
+        cachedEvents.clear();
+        cachedEvents.addAll(events);
+        applyAdminEventFilter();
+        clientEventsTable.setItems(FXCollections.observableArrayList(cachedEvents));
+
+        selectEventByIdOrFirst(adminEventsTable, selectedAdminEventId);
+        selectEventByIdOrFirst(clientEventsTable, selectedClientEventId);
+        restoreClientTicketTypeSelection(selectedTicketTypeId);
+
+        if (cachedEvents.isEmpty()) {
+            adminEventsSummaryLabel.setText("No hay eventos registrados");
+            ticketTypeCombo.setItems(FXCollections.emptyObservableList());
+            updateQuantityLimit(null);
+        }
+    }
+
+    private void applyAdminUsersData(List<AdminUserModel> users, boolean preserveSelections) {
+        long selectedTableUserId = preserveSelections ? selectedUserId(usersTable.getSelectionModel().getSelectedItem())
+                : -1L;
+        long selectedHistoryUserId = preserveSelections ? selectedUserId(selectedAdminUser) : -1L;
+
+        cachedUsers.clear();
+        cachedUsers.addAll(users);
+        applyUserFilter();
+        selectUserByIdOrFirst(usersTable, selectedTableUserId);
+
+        if (selectedHistoryUserId > 0) {
+            selectedAdminUser = findUserById(selectedHistoryUserId);
+        }
+
+        rebuildSalesData();
+        refreshSelectedUser();
+    }
+
+    private void startBusinessAutoRefresh() {
+        stopBusinessAutoRefresh();
+        businessDataTimeline = new Timeline(new KeyFrame(Duration.seconds(4), event -> refreshBusinessDataAsync()));
+        businessDataTimeline.setCycleCount(Timeline.INDEFINITE);
+        businessDataTimeline.play();
+    }
+
+    private void stopBusinessAutoRefresh() {
+        if (businessDataTimeline != null) {
+            businessDataTimeline.stop();
+            businessDataTimeline = null;
+        }
+    }
+
+    private void refreshBusinessDataAsync() {
+        if (!businessDataFetchInFlight.compareAndSet(false, true)) {
+            return;
+        }
+
+        boolean admin = isAdmin();
+        Thread thread = new Thread(() -> {
+            List<EventModel> refreshedEvents = null;
+            List<AdminUserModel> refreshedUsers = null;
+            try {
+                try {
+                    refreshedEvents = eventService.fetchEvents();
+                } catch (Exception ignored) {
+                }
+                if (admin) {
+                    try {
+                        refreshedUsers = adminUserService.fetchUsersWithHistory();
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                final List<EventModel> finalEvents = refreshedEvents;
+                final List<AdminUserModel> finalUsers = refreshedUsers;
+                Platform.runLater(() -> {
+                    if (finalEvents != null) {
+                        applyEventsData(finalEvents, true);
+                    }
+                    if (admin && finalUsers != null) {
+                        applyAdminUsersData(finalUsers, true);
+                    }
+                });
+            } finally {
+                businessDataFetchInFlight.set(false);
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private long selectedEventId(TableView<EventModel> table) {
+        EventModel selected = table.getSelectionModel().getSelectedItem();
+        return selected != null ? selected.getId() : -1L;
+    }
+
+    private long selectedTicketTypeId() {
+        TicketTypeModel selected = ticketTypeCombo.getSelectionModel().getSelectedItem();
+        return selected != null ? selected.getId() : -1L;
+    }
+
+    private long selectedUserId(AdminUserModel user) {
+        return user != null ? user.getId() : -1L;
+    }
+
+    private void selectEventByIdOrFirst(TableView<EventModel> table, long preferredId) {
+        if (table.getItems().isEmpty()) {
+            table.getSelectionModel().clearSelection();
+            return;
+        }
+        if (preferredId > 0) {
+            for (EventModel event : table.getItems()) {
+                if (event.getId() == preferredId) {
+                    table.getSelectionModel().select(event);
+                    table.scrollTo(event);
+                    return;
+                }
+            }
+        }
+        table.getSelectionModel().selectFirst();
+    }
+
+    private void restoreClientTicketTypeSelection(long preferredId) {
+        if (ticketTypeCombo.getItems() == null || ticketTypeCombo.getItems().isEmpty()) {
+            ticketTypeCombo.setItems(FXCollections.emptyObservableList());
+            updateQuantityLimit(null);
+            return;
+        }
+        if (preferredId > 0) {
+            for (TicketTypeModel type : ticketTypeCombo.getItems()) {
+                if (type.getId() == preferredId) {
+                    ticketTypeCombo.getSelectionModel().select(type);
+                    return;
+                }
+            }
+        }
+        ticketTypeCombo.getSelectionModel().selectFirst();
+    }
+
+    private void selectUserByIdOrFirst(TableView<AdminUserModel> table, long preferredId) {
+        if (table.getItems().isEmpty()) {
+            table.getSelectionModel().clearSelection();
+            return;
+        }
+        if (preferredId > 0) {
+            for (AdminUserModel user : table.getItems()) {
+                if (user.getId() == preferredId) {
+                    table.getSelectionModel().select(user);
+                    table.scrollTo(user);
+                    return;
+                }
+            }
+        }
+        table.getSelectionModel().selectFirst();
+    }
+
+    private AdminUserModel findUserById(long userId) {
+        if (userId <= 0) {
+            return null;
+        }
+        for (AdminUserModel user : cachedUsers) {
+            if (user.getId() == userId) {
+                return user;
+            }
+        }
+        return null;
     }
 
     private void applyAdminEventFilter() {
@@ -539,6 +804,7 @@ public class EventsController {
         }
         try {
             adminUserService.updateBanStatus(user.getId(), !user.isBaneado());
+            loadEvents();
             loadAdminUsers();
             AlertUtil.info("Usuarios", user.isBaneado()
                     ? "Ban retirado correctamente"
@@ -634,7 +900,8 @@ public class EventsController {
                     .add(sale.getPrice());
         }
         return counters.entrySet().stream()
-                .map(entry -> new SalesAggregateModel(-1L, entry.getKey(), entry.getValue().count, entry.getValue().revenue))
+                .map(entry -> new SalesAggregateModel(-1L, entry.getKey(), entry.getValue().count,
+                        entry.getValue().revenue))
                 .sorted(Comparator.comparingInt(SalesAggregateModel::getTicketsSold).reversed())
                 .collect(Collectors.toList());
     }

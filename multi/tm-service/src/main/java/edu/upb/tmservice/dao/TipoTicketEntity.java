@@ -8,13 +8,16 @@ public class TipoTicketEntity {
     private final String tipoAsiento;
     private final int cantidad;
     private final BigDecimal precio;
+    private final int proximoAsiento;
 
-    public TipoTicketEntity(long id, long idEvento, String tipoAsiento, int cantidad, BigDecimal precio) {
+    public TipoTicketEntity(long id, long idEvento, String tipoAsiento, int cantidad, BigDecimal precio,
+            int proximoAsiento) {
         this.id = id;
         this.idEvento = idEvento;
         this.tipoAsiento = tipoAsiento;
         this.cantidad = cantidad;
         this.precio = precio;
+        this.proximoAsiento = proximoAsiento;
     }
 
     public long getId() {
@@ -35,5 +38,9 @@ public class TipoTicketEntity {
 
     public BigDecimal getPrecio() {
         return precio;
+    }
+
+    public int getProximoAsiento() {
+        return proximoAsiento;
     }
 }

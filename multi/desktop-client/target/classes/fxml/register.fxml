@@ -9,14 +9,52 @@
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="edu.upb.desktop.controller.RegisterController"
-      spacing="12" alignment="CENTER" styleClass="screen-root">
-    <padding>
-        <Insets top="40" right="40" bottom="40" left="40"/>
-    </padding>
-    <Label text="Crear cuenta" styleClass="title-label"/>
-    <TextField fx:id="usernameField" promptText="Username" maxWidth="320"/>
-    <TextField fx:id="nameField" promptText="Nombre completo" maxWidth="320"/>
-    <PasswordField fx:id="passwordField" promptText="Password" maxWidth="320"/>
-    <Button text="Registrar usuario" onAction="#onRegister" maxWidth="320" styleClass="primary-button"/>
-    <Button text="Volver al login" onAction="#onBack" maxWidth="320" styleClass="secondary-button"/>
+      alignment="CENTER" styleClass="screen-root">
+
+    <!-- Card centrada -->
+    <VBox alignment="TOP_LEFT" maxWidth="360" spacing="0" styleClass="auth-card">
+
+        <!-- Marca -->
+        <Label text="TickMaster" styleClass="brand-label"/>
+        <Label text="Crea tu cuenta" styleClass="muted-label">
+            <VBox.margin><Insets top="4" bottom="28"/></VBox.margin>
+        </Label>
+
+        <!-- Campo: usuario -->
+        <Label text="USUARIO" styleClass="form-label">
+            <VBox.margin><Insets bottom="6"/></VBox.margin>
+        </Label>
+        <TextField fx:id="usernameField" promptText="Elige un nombre de usuario"
+                   maxWidth="Infinity" styleClass="text-input">
+            <VBox.margin><Insets bottom="16"/></VBox.margin>
+        </TextField>
+
+        <!-- Campo: nombre -->
+        <Label text="NOMBRE COMPLETO" styleClass="form-label">
+            <VBox.margin><Insets bottom="6"/></VBox.margin>
+        </Label>
+        <TextField fx:id="nameField" promptText="Tu nombre completo"
+                   maxWidth="Infinity" styleClass="text-input">
+            <VBox.margin><Insets bottom="16"/></VBox.margin>
+        </TextField>
+
+        <!-- Campo: contraseña -->
+        <Label text="CONTRASEÑA" styleClass="form-label">
+            <VBox.margin><Insets bottom="6"/></VBox.margin>
+        </Label>
+        <PasswordField fx:id="passwordField" promptText="Crea una contraseña"
+                       maxWidth="Infinity" styleClass="password-field">
+            <VBox.margin><Insets bottom="24"/></VBox.margin>
+        </PasswordField>
+
+        <!-- Botones -->
+        <Button text="Registrar usuario" onAction="#onRegister"
+                maxWidth="Infinity" styleClass="primary-button">
+            <VBox.margin><Insets bottom="10"/></VBox.margin>
+        </Button>
+        <Button text="Volver al login" onAction="#onBack"
+                maxWidth="Infinity" styleClass="secondary-button"/>
+
+    </VBox>
+
 </VBox>
